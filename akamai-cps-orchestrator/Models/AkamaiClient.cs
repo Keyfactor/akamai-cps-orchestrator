@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
-using Keyfactor.Extensions.Orchestrator.AkamaiCpsOrchestrator.Jobs;
+using Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs;
 using Newtonsoft.Json;
 
-namespace Keyfactor.Extensions.Orchestrator.AkamaiCpsOrchestrator.Models
+namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
 {
     public class AkamaiClient
     {
@@ -22,9 +22,11 @@ namespace Keyfactor.Extensions.Orchestrator.AkamaiCpsOrchestrator.Models
 
         public AkamaiClient(string clientMachine, AkamaiAuth auth)
         {
-            string[] clientInput = clientMachine.Split('#'); // if > 2 parts, invalid input
-            Hostname = clientInput[0];
-            EnrollmentId = clientInput[1];
+            //string[] clientInput = clientMachine.Split('#'); // if > 2 parts, invalid input
+            //Hostname = clientInput[0];
+            //EnrollmentId = clientInput[1];
+
+            Hostname = clientMachine;
 
             _auth = auth;
             _http = new HttpClient();

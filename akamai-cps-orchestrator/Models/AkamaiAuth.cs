@@ -5,7 +5,7 @@ using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Keyfactor.Extensions.Orchestrator.AkamaiCpsOrchestrator.Models
+namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
 {
     public class AkamaiAuth
     {
@@ -32,6 +32,8 @@ namespace Keyfactor.Extensions.Orchestrator.AkamaiCpsOrchestrator.Models
             // Auth Header signing key is the signature from signing the timestamp with client secret
             byte[] signingKey = SignData_HMAC_SHA256(timestamp.ToString(), Convert.FromBase64String(_clientSecret));
 
+            // needs to handle GETs, when requestBody is null
+            // TODO: avoid Argument null exceptions in ComputeHash and Convert
             byte[] requestBodyHash = SHA256.Create().ComputeHash(Encoding.ASCII.GetBytes(requestBody));
 
             // FIELDS: request method, request scheme, request host, request path + query or params, headers, hashed request body

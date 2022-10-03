@@ -1,9 +1,11 @@
 ﻿using Keyfactor.Orchestrators.Extensions;
-using Keyfactor.Extensions.Orchestrator.AkamaiCpsOrchestrator.Models;
+using Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models;
 using System;
+using System.Collections.Generic;
 using System.Text;
+using Newtonsoft.Json;
 
-namespace Keyfactor.Extensions.Orchestrator.AkamaiCpsOrchestrator.Jobs
+namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
 {
     public class Reenrollment : IReenrollmentJobExtension
     {
@@ -11,11 +13,12 @@ namespace Keyfactor.Extensions.Orchestrator.AkamaiCpsOrchestrator.Jobs
 
         public JobResult ProcessJob(ReenrollmentJobConfiguration jobConfiguration, SubmitReenrollmentCSR submitReenrollmentUpdate)
         {
-            AkamaiAuth auth = new AkamaiAuth();
+            var props = JsonConvert.DeserializeObject<Dictionary<string, string>>(jobConfiguration.CertificateStoreDetails.Properties);
+            AkamaiAuth auth = new AkamaiAuth(props["ClientSecret"], props["ClientToken"], props["AccessToken"]);
             AkamaiClient client = new AkamaiClient(jobConfiguration.CertificateStoreDetails.ClientMachine, auth)
             {
-                Username = jobConfiguration.ServerUsername,
-                ApiKey = jobConfiguration.ServerPassword
+                //Username = jobConfiguration.ServerUsername,
+                //ApiKey = jobConfiguration.ServerPassword
             };
 
             client.SetDeploymentType(jobConfiguration.CertificateStoreDetails.StorePath);
@@ -25,11 +28,16 @@ namespace Keyfactor.Extensions.Orchestrator.AkamaiCpsOrchestrator.Jobs
             // get enrollment
             CreatedEnrollment enrollment;
             bool newEnrollment = false;
+            var allJobProps = jobConfiguration.JobProperties;
+            var allStoreProps = jobConfiguration.CertificateStoreDetails.Properties;
+
+            // safe check for enrollment id. if not present as an entry parameter, need to make a new enrollment
+            string enrollmentId = allJobProps["EnrollmentId"].ToString();
             try
             {
-                Enrollment existingEnrollment = client.GetEnrollment();
+                Enrollment existingEnrollment = client.GetEnrollment(enrollmentId);
                 // make needed enrollment changes
-                enrollment = client.UpdateEnrollment(existingEnrollment);
+                enrollment = client.UpdateEnrollment(enrollmentId, existingEnrollment);
             }
             catch
             {

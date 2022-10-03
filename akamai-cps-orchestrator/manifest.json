@@ -1,0 +1,15 @@
+{
+  "extensions": {
+    "Keyfactor.Orchestrators.Extensions.IOrchestratorJobExtension": {
+      "CertStores.Akamai.Inventory": {
+        "assemblypath": "akamai-cps-orchestrator.dll",
+        "TypeFullName": "Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs.Inventory"
+      },
+      "CertStores.Akamai.Reenrollment": {
+        "assemblypath": "akamai-cps-orchestrator.dll",
+        "TypeFullName": "Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs.Reenrollment"
+      }
+    }
+  }
+}
+  

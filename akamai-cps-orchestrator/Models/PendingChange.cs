@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Keyfactor.Extensions.Orchestrator.AkamaiCpsOrchestrator.Models
+namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
 {
     // get the CSR generated for an enrollment change
     public class PendingChange
