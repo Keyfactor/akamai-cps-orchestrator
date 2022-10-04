@@ -16,6 +16,11 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
         public string validationType = "third-party";
     }
 
+    public class Enrollments
+    {
+        public Enrollment[] enrollments;
+    }
+
     public class EnrollmentCSR
     {
         public string c;
