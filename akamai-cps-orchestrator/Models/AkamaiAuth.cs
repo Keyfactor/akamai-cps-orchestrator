@@ -16,11 +16,21 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
         private string Nonce { get { return new Guid().ToString(); } }
         public readonly string AuthType = "EG1-HMAC-SHA256";
 
-        public AkamaiAuth(string clientSecret, string clientToken, string accessToken)
+        public AkamaiAuth()
         {
-            _clientSecret = clientSecret; // assumed to be base64 encoded
-            _clientToken = clientToken;
-            _accessToken = accessToken;
+            string extensionDirectory = Path.GetDirectoryName(this.GetType().Assembly.Location);
+            string[] edgeGridInfo = File.ReadAllLines($"{extensionDirectory}{Path.DirectorySeparatorChar}.edgerc");
+
+            // handling only 1 entry in the .edgerc file
+            // expected structure:
+            // client_secret = xxxx
+            // host = xxxx
+            // access_token = xxxx
+            // client_token = xxxx
+
+            _clientSecret = edgeGridInfo[0].Split('=', 2)[1].Trim(); // assumed to be base64 encoded
+            _clientToken = edgeGridInfo[3].Split('=', 2)[1].Trim();
+            _accessToken = edgeGridInfo[2].Split('=', 2)[1].Trim();
         }
 
         public AuthenticationHeaderValue GenerateAuthHeader(string requestMethod, string host, string path, string requestBody = null)

@@ -12,8 +12,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
 
         public JobResult ProcessJob(InventoryJobConfiguration jobConfiguration, SubmitInventoryUpdate submitInventoryUpdate)
         {
-            var props = JsonConvert.DeserializeObject<Dictionary<string, string>>(jobConfiguration.CertificateStoreDetails.Properties);
-            AkamaiAuth auth = new AkamaiAuth(props["ClientSecret"], props["ClientToken"], props["AccessToken"]);
+            AkamaiAuth auth = new AkamaiAuth();
             AkamaiClient client = new AkamaiClient(jobConfiguration.CertificateStoreDetails.ClientMachine, auth);
 
             client.SetDeploymentType(jobConfiguration.CertificateStoreDetails.StorePath);
