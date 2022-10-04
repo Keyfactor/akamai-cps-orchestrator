@@ -7,6 +7,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
     // create an enrollment to generate a change CSR
     public class Enrollment
     {
+        public string id;
         public string certificateType = "third-party";
         public bool changeManagement = false;
         public EnrollmentCSR csr;

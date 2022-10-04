@@ -41,7 +41,8 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             }
 
             // update the enrollment and get CSR
-            string csr = client.GetCSR(enrollment.changes[0]);
+            string changeId = enrollment.changes[0];
+            string csr = client.GetCSR(enrollmentId, changeId);
 
             // submit csr
             var x509Cert = submitReenrollmentUpdate.Invoke(csr);
@@ -54,7 +55,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             sb.AppendLine("-----END CERTIFICATE-----");
             var certContent = sb.ToString();
 
-            client.PostCertificate(certContent, x509Cert.GetKeyAlgorithm());
+            client.PostCertificate(enrollmentId, changeId, certContent, x509Cert.GetKeyAlgorithm());
 
             JobResult result = new JobResult()
             {

@@ -17,22 +17,26 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
 
             client.SetDeploymentType(jobConfiguration.CertificateStoreDetails.StorePath);
 
-            // look up all enrollments instead and get certificates - don't have a specific enrollment id to lookup for the entire cert store
-            CertificateInfo cert = client.GetCertificate();
-
-            CurrentInventoryItem[] inventory = new CurrentInventoryItem[]
+            // look up all enrollments and get certificates from each enrollment
+            Enrollment[] enrollments = client.GetEnrollments();
+            var inventory = new List<CurrentInventoryItem>();
+            foreach(var enrollment in enrollments)
             {
-                new CurrentInventoryItem()
-                {
-                    Certificates = new string[] { cert.certificate },
-                    ItemStatus = Orchestrators.Common.Enums.OrchestratorInventoryItemStatus.New
-                }
-            };
+                CertificateInfo cert = client.GetCertificate(enrollment.id);
+                inventory.Add(
+                    new CurrentInventoryItem()
+                    {
+                        Certificates = new string[] { cert.certificate },
+                        ItemStatus = Orchestrators.Common.Enums.OrchestratorInventoryItemStatus.New
+                    }
+                );
+            }
+
             bool success = submitInventoryUpdate.Invoke(inventory);
 
             JobResult result = new JobResult()
             {
-                Result = Orchestrators.Common.Enums.OrchestratorJobStatusJobResult.Success
+                Result = success ? Orchestrators.Common.Enums.OrchestratorJobStatusJobResult.Success : Orchestrators.Common.Enums.OrchestratorJobStatusJobResult.Failure
             };
             return result;
         }

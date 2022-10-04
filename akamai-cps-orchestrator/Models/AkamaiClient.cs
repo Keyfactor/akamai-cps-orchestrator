@@ -16,16 +16,10 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
         public string ApiKey; // accountSwitchKey
 
         public string Hostname;
-        public string EnrollmentId;
-        public string ChangeId;
         public bool IsProduction = false;
 
         public AkamaiClient(string clientMachine, AkamaiAuth auth)
         {
-            //string[] clientInput = clientMachine.Split('#'); // if > 2 parts, invalid input
-            //Hostname = clientInput[0];
-            //EnrollmentId = clientInput[1];
-
             Hostname = clientMachine;
 
             _auth = auth;
@@ -49,11 +43,10 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             }
         }
 
-        public CertificateInfo GetCertificate()
+        public CertificateInfo GetCertificate(string enrollmentId)
         {
-            var path = string.Format(Constants.Endpoints.Deployments, EnrollmentId);
-            var authHeader = _auth.GenerateAuthHeader("GET", Hostname, path);
-            _http.DefaultRequestHeaders.Authorization = authHeader;
+            var path = string.Format(Constants.Endpoints.Deployments, enrollmentId);
+            PrepareAuth("GET", path);
 
             var response = _http.GetAsync(path).Result;
             string json = response.Content.ReadAsStringAsync().Result;
@@ -69,12 +62,20 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             }
         }
 
+        public Enrollment[] GetEnrollments()
+        {
+            var path = Constants.Endpoints.Enrollments;
+            PrepareAuth("GET", path);
+
+            var response = _http.GetAsync(path).Result;
+            string json = response.Content.ReadAsStringAsync().Result;
+            return JsonConvert.DeserializeObject<Enrollment[]>(json);
+        }
+
         public Enrollment GetEnrollment(string enrollmentId)
         {
-            EnrollmentId = enrollmentId;
-            var path = $"{Constants.Endpoints.Enrollments}/{EnrollmentId}";
-            var authHeader = _auth.GenerateAuthHeader("GET", Hostname, path);
-            _http.DefaultRequestHeaders.Authorization = authHeader;
+            var path = $"{Constants.Endpoints.Enrollments}/{enrollmentId}";
+            PrepareAuth("GET", path);
 
             var response = _http.GetAsync(path).Result;
             string json = response.Content.ReadAsStringAsync().Result;
@@ -89,8 +90,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
                 //
             };
             var body = JsonConvert.SerializeObject(newEnrollment);
-            var authHeader = _auth.GenerateAuthHeader("POST", Hostname, path, body);
-            _http.DefaultRequestHeaders.Authorization = authHeader;
+            PrepareAuth("POST", path, body);
 
             var response = _http.PostAsync(path, new StringContent(body)).Result;
             string json = response.Content.ReadAsStringAsync().Result;
@@ -102,8 +102,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
         {
             var path = Constants.Endpoints.Enrollments;
             var body = JsonConvert.SerializeObject(enrollment);
-            var authHeader = _auth.GenerateAuthHeader("PUT", Hostname, path, body);
-            _http.DefaultRequestHeaders.Authorization = authHeader;
+            PrepareAuth("PUT", path, body);
 
             var response = _http.PutAsync(path, new StringContent(body)).Result;
             string json = response.Content.ReadAsStringAsync().Result;
@@ -111,12 +110,11 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             return updatedEnrollment;
         }
 
-        public string GetCSR(string changeId)
+        public string GetCSR(string enrollmentId, string changeId)
         {
             // get CSR from new pending change
-            var path = string.Format(Constants.Endpoints.GetChange, EnrollmentId, changeId);
-            var authHeader = _auth.GenerateAuthHeader("GET", Hostname, path);
-            _http.DefaultRequestHeaders.Authorization = authHeader;
+            var path = string.Format(Constants.Endpoints.GetChange, enrollmentId, changeId);
+            PrepareAuth("GET", path);
 
             var response = _http.GetAsync(path).Result;
             string json = response.Content.ReadAsStringAsync().Result;
@@ -125,9 +123,9 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             return change.csrs[0].csr;
         }
 
-        public void PostCertificate(string certificate, string keyAlgorithm, string trustChain = null)
+        public void PostCertificate(string enrollmentId, string changeId, string certificate, string keyAlgorithm, string trustChain = null)
         {
-            var path = string.Format(Constants.Endpoints.UpdateChange, EnrollmentId, ChangeId);
+            var path = string.Format(Constants.Endpoints.UpdateChange, enrollmentId, changeId);
             CertificateInfo[] cert = new CertificateInfo[]
             {
                 new CertificateInfo()
@@ -138,23 +136,27 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
                 }
             };
             var body = JsonConvert.SerializeObject(cert);
-            var authHeader = _auth.GenerateAuthHeader("POST", Hostname, path, body);
-            _http.DefaultRequestHeaders.Authorization = authHeader;
+            PrepareAuth("POST", path, body);
 
             var response = _http.PostAsync(path, new StringContent(body)).Result;
             string json = response.Content.ReadAsStringAsync().Result;
             return;
         }
 
-        public void DeployCertificate()
+        public void DeployCertificate(string enrollmentId, string changeId)
         {
-            var path = string.Format(Constants.Endpoints.UpdateDeployment, EnrollmentId, ChangeId);
-            var authHeader = _auth.GenerateAuthHeader("GET", Hostname, path);
-            _http.DefaultRequestHeaders.Authorization = authHeader;
+            var path = string.Format(Constants.Endpoints.UpdateDeployment, enrollmentId, changeId);
+            PrepareAuth("GET", path);
 
             var response = _http.GetAsync(path).Result;
             string json = response.Content.ReadAsStringAsync().Result;
             return;
+        }
+
+        private void PrepareAuth(string method, string path, string requestBody = null)
+        {
+            var authHeader = _auth.GenerateAuthHeader(method, Hostname, path, requestBody);
+            _http.DefaultRequestHeaders.Authorization = authHeader;
         }
     }
 }
