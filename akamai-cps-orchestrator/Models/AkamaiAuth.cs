@@ -13,7 +13,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
         private readonly string _clientToken;
         private readonly string _accessToken;
 
-        private string Nonce { get { return new Guid().ToString(); } }
+        private string Nonce { get { return Guid.NewGuid().ToString(); } }
         public readonly string AuthType = "EG1-HMAC-SHA256";
 
         public AkamaiAuth()
@@ -28,37 +28,48 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             // access_token = xxxx
             // client_token = xxxx
 
-            _clientSecret = edgeGridInfo[0].Split('=', 2)[1].Trim(); // assumed to be base64 encoded
+            _clientSecret = edgeGridInfo[0].Split('=', 2)[1].Trim();
             _clientToken = edgeGridInfo[3].Split('=', 2)[1].Trim();
             _accessToken = edgeGridInfo[2].Split('=', 2)[1].Trim();
         }
 
         public AuthenticationHeaderValue GenerateAuthHeader(string requestMethod, string host, string path, string requestBody = null)
         {
-            string authFormat = string.Join(' ', "client_token={0};", "access_token={1};", "timestamp={2};", "nonce={3};", "signature={4}");
+            DateTime time = DateTime.UtcNow;
+            string timestamp = time.ToString("yyyyMMddTHH:mm:ss+0000");
 
-            DateTime timestamp = DateTime.Now;
+            string authFormat = "client_token={0};access_token={1};timestamp={2};nonce={3};";
+            string authHeaderValue = string.Format(authFormat, _clientToken, _accessToken, timestamp, Nonce);
 
             // Auth Header signing key is the signature from signing the timestamp with client secret
-            byte[] signingKey = SignData_HMAC_SHA256(timestamp.ToString(), Convert.FromBase64String(_clientSecret));
+            string signingKey = Convert.ToBase64String(SignData_HMAC_SHA256(timestamp, Encoding.UTF8.GetBytes(_clientSecret)));
 
-            // needs to handle GETs, when requestBody is null
-            // TODO: avoid Argument null exceptions in ComputeHash and Convert
-            byte[] requestBodyHash = SHA256.Create().ComputeHash(Encoding.ASCII.GetBytes(requestBody));
+            byte[] requestBodyHash = null;
+            if (!string.IsNullOrWhiteSpace(requestBody))
+            {
+                requestBodyHash = SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(requestBody));
+            }
 
-            // FIELDS: request method, request scheme, request host, request path + query or params, headers, hashed request body
-            string requestData = string.Join('\t', requestMethod.ToUpper(), "https", host, path, "", Convert.ToBase64String(requestBodyHash));
+            // FIELDS: request method, request scheme, request host, request path + query or params, headers, hashed request body, auth header without signature
+            string requestData = string.Join('\t',
+                requestMethod.ToUpper(),                                                // request method
+                "https",                                                                // request scheme
+                host,                                                                   // request host
+                path,                                                                   // request path
+                "",                                                                     // other headers
+                requestBodyHash != null ? Convert.ToBase64String(requestBodyHash) : "", // base 64 of sha256 hash of request body
+                $"{AuthType} {authHeaderValue}"                                         // auth header before adding signature
+            );
 
-            byte[] signature = SignData_HMAC_SHA256(requestData, signingKey);
-
-            string authHeaderValue = string.Format(authFormat, _clientToken, _accessToken, timestamp, Nonce, Convert.ToBase64String(signature));
+            byte[] signature = SignData_HMAC_SHA256(requestData, Encoding.UTF8.GetBytes(signingKey));
+            authHeaderValue += $"signature={Convert.ToBase64String(signature)}";
             return new AuthenticationHeaderValue(AuthType, authHeaderValue);
         }
 
         private byte[] SignData_HMAC_SHA256(string data, byte[] key)
         {
             HMACSHA256 signingAlgorithm = new HMACSHA256(key);
-            byte[] signature = signingAlgorithm.ComputeHash(Encoding.ASCII.GetBytes(data));
+            byte[] signature = signingAlgorithm.ComputeHash(Encoding.UTF8.GetBytes(data));
             return signature;
         }
     }
