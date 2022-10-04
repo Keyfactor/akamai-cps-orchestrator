@@ -22,22 +22,23 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
 
             // get enrollment
             CreatedEnrollment enrollment;
-            bool newEnrollment = false;
-            var allJobProps = jobConfiguration.JobProperties; // contains entry parameters
+            var allJobProps = jobConfiguration.JobProperties; // contains entry parameters - EnrollmentId
 
-            // make this a safe check for enrollment id. if not present as an entry parameter, need to make a new enrollment
-            string enrollmentId = allJobProps["EnrollmentId"].ToString();
-            try
+            // if not present as an entry parameter, need to make a new enrollment
+            string enrollmentId;
+            bool enrollmentExists = allJobProps.TryGetValue("EnrollmentId", out object existingEnrollmentId);
+            if (enrollmentExists)
             {
-                Enrollment existingEnrollment = client.GetEnrollment(enrollmentId);
+                enrollmentId = existingEnrollmentId.ToString();
+                Enrollment existingEnrollment = client.GetEnrollment(enrollmentId); // TODO: detect when enrollment with this id does not actually exist
                 // make needed enrollment changes
                 enrollment = client.UpdateEnrollment(enrollmentId, existingEnrollment);
             }
-            catch
+            else
             {
                 // no existing enrollment, create a new one
-                newEnrollment = true;
                 enrollment = client.CreateEnrollment();
+                enrollmentId = enrollment.enrollment;
             }
 
             // update the enrollment and get CSR
