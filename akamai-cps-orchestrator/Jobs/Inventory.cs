@@ -14,16 +14,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
         {
             var props = JsonConvert.DeserializeObject<Dictionary<string, string>>(jobConfiguration.CertificateStoreDetails.Properties);
             AkamaiAuth auth = new AkamaiAuth(props["ClientSecret"], props["ClientToken"], props["AccessToken"]);
-            AkamaiClient client = new AkamaiClient(jobConfiguration.CertificateStoreDetails.ClientMachine, auth)
-            {
-                //Username = jobConfiguration.ServerUsername,
-                //ApiKey = jobConfiguration.ServerPassword
-            };
-
-            var allJobProps = jobConfiguration.JobProperties;
-            var allStoreProps = jobConfiguration.CertificateStoreDetails.Properties;
-
-            //string enrollmentId = allJobProps["EnrollmentId"].ToString();
+            AkamaiClient client = new AkamaiClient(jobConfiguration.CertificateStoreDetails.ClientMachine, auth);
 
             client.SetDeploymentType(jobConfiguration.CertificateStoreDetails.StorePath);
 

@@ -15,11 +15,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
         {
             var props = JsonConvert.DeserializeObject<Dictionary<string, string>>(jobConfiguration.CertificateStoreDetails.Properties);
             AkamaiAuth auth = new AkamaiAuth(props["ClientSecret"], props["ClientToken"], props["AccessToken"]);
-            AkamaiClient client = new AkamaiClient(jobConfiguration.CertificateStoreDetails.ClientMachine, auth)
-            {
-                //Username = jobConfiguration.ServerUsername,
-                //ApiKey = jobConfiguration.ServerPassword
-            };
+            AkamaiClient client = new AkamaiClient(jobConfiguration.CertificateStoreDetails.ClientMachine, auth);
 
             client.SetDeploymentType(jobConfiguration.CertificateStoreDetails.StorePath);
 
@@ -28,10 +24,9 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             // get enrollment
             CreatedEnrollment enrollment;
             bool newEnrollment = false;
-            var allJobProps = jobConfiguration.JobProperties;
-            var allStoreProps = jobConfiguration.CertificateStoreDetails.Properties;
+            var allJobProps = jobConfiguration.JobProperties; // contains entry parameters
 
-            // safe check for enrollment id. if not present as an entry parameter, need to make a new enrollment
+            // make this a safe check for enrollment id. if not present as an entry parameter, need to make a new enrollment
             string enrollmentId = allJobProps["EnrollmentId"].ToString();
             try
             {
