@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Newtonsoft.Json;
+using System.IO;
 
 namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
 {
@@ -22,22 +23,53 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
 
             // get enrollment
             CreatedEnrollment enrollment;
-            var allJobProps = jobConfiguration.JobProperties; // contains entry parameters - EnrollmentId
+            var allJobProps = jobConfiguration.JobProperties; // contains entry parameters - EnrollmentId, ContractId
+            string subject = allJobProps["subjectText"].ToString();
+            string keyType = allJobProps["keyType"].ToString();
+            string contractId = allJobProps["ContractId"].ToString();
+            // TODO: add entry parameters for SANs on reenrollment?
+
+            string[] subjectParams = subject.Split(',');
+            var subjectValues = new Dictionary<string, string>();
+            foreach (var subjectParam in subjectParams)
+            {
+                string[] subjectPair = subjectParam.Split('=', 2);
+                subjectValues.Add(subjectPair[0].ToUpper(), subjectPair[1]);
+            }
+
+            var reenrollment = new Enrollment()
+            {
+                csr = new EnrollmentCSR()
+                {
+                    // retrieve subject values by uppercase name
+                    cn = subjectValues.GetValueOrDefault("CN"),
+                    c = subjectValues.GetValueOrDefault("C"),
+                    l = subjectValues.GetValueOrDefault("L"),
+                    o = subjectValues.GetValueOrDefault("O"),
+                    ou = subjectValues.GetValueOrDefault("OU"),
+                    st = subjectValues.GetValueOrDefault("ST")
+                }
+            };
+
+            string extensionDirectory = Path.GetDirectoryName(this.GetType().Assembly.Location);
+            string jsonContactInfo = File.ReadAllText($"{extensionDirectory}{Path.DirectorySeparatorChar}config.json");
+            JsonConvert.PopulateObject(jsonContactInfo, reenrollment);
+
 
             // if not present as an entry parameter, need to make a new enrollment
             string enrollmentId;
             bool enrollmentExists = allJobProps.TryGetValue("EnrollmentId", out object existingEnrollmentId);
-            if (enrollmentExists)
+            if (enrollmentExists && existingEnrollmentId != null)
             {
                 enrollmentId = existingEnrollmentId.ToString();
                 Enrollment existingEnrollment = client.GetEnrollment(enrollmentId); // TODO: detect when enrollment with this id does not actually exist
-                // make needed enrollment changes
-                enrollment = client.UpdateEnrollment(enrollmentId, existingEnrollment);
+                // make needed enrollment changes, merge ?
+                enrollment = client.UpdateEnrollment(enrollmentId, reenrollment);
             }
             else
             {
                 // no existing enrollment, create a new one
-                enrollment = client.CreateEnrollment();
+                enrollment = client.CreateEnrollment(reenrollment, contractId);
                 enrollmentId = enrollment.enrollment;
             }
 

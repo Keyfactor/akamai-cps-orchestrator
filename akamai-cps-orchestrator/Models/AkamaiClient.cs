@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs;
 using Newtonsoft.Json;
@@ -11,6 +12,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
     {
         private HttpClient _http;
         private AkamaiAuth _auth;
+        private JsonSerializerSettings _serializerSettings = new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore };
 
         public string Username;
         public string ApiKey; // accountSwitchKey
@@ -94,23 +96,20 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             return JsonConvert.DeserializeObject<Enrollment>(json);
         }
 
-        public CreatedEnrollment CreateEnrollment()
+        public CreatedEnrollment CreateEnrollment(Enrollment newEnrollment, string contractId)
         {
-            var path = Constants.Endpoints.Enrollments;
-            Enrollment newEnrollment = new Enrollment()
-            {
-                //
-            };
-            var body = JsonConvert.SerializeObject(newEnrollment);
+            var path = $"{Constants.Endpoints.Enrollments}?contractId={contractId}";
+            var body = JsonConvert.SerializeObject(newEnrollment, _serializerSettings);
+            var requestContent = new StringContent(body);
             var acceptHeader = "application/vnd.akamai.cps.enrollment-status.v1+json";
-            var contentHeader = "application/vnd.akamai.cps.enrollment.v11+json";
+            var contentHeader = "application/vnd.akamai.cps.enrollment.v4+json";
 
             _http.DefaultRequestHeaders.Clear();
             _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
-            _http.DefaultRequestHeaders.Add("Content-Type", contentHeader);
+            requestContent.Headers.ContentType = new MediaTypeHeaderValue(contentHeader);
             PrepareAuth("POST", path, $"Accept:{acceptHeader}\tContent-Type:{contentHeader}", body);
 
-            var response = _http.PostAsync(path, new StringContent(body)).Result;
+            var response = _http.PostAsync(path, requestContent).Result;
             string json = response.Content.ReadAsStringAsync().Result;
             CreatedEnrollment enrollment = JsonConvert.DeserializeObject<CreatedEnrollment>(json);
             return enrollment;
