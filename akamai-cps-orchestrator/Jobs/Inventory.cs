@@ -3,6 +3,8 @@ using Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models;
 using System;
 using Newtonsoft.Json;
 using System.Collections.Generic;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 
 namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
 {
@@ -23,21 +25,34 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             foreach(var enrollment in enrollments)
             {
                 CertificateInfo cert = client.GetCertificate(enrollment.id);
-                inventory.Add(
-                    new CurrentInventoryItem()
-                    {
-                        Certificates = new string[] { cert.certificate },
-                        ItemStatus = Orchestrators.Common.Enums.OrchestratorInventoryItemStatus.New
-                    }
-                );
+                if (cert != null) // some enrollments found will not have a cert of the same deployment type
+                {
+                    var x509Cert = new X509Certificate2(Encoding.UTF8.GetBytes(cert.certificate));
+                    inventory.Add(
+                        new CurrentInventoryItem()
+                        {
+                            Certificates = new string[] { Convert.ToBase64String(x509Cert.Export(X509ContentType.Cert)) },
+                            ItemStatus = Orchestrators.Common.Enums.OrchestratorInventoryItemStatus.Unknown,
+                            PrivateKeyEntry = false,
+                            UseChainLevel = false,
+                            Alias = x509Cert.Thumbprint,
+                            Parameters = new Dictionary<string, object>
+                            {
+                                { "EnrollmentId", enrollment.id }
+                            }
+                        }
+                    );
+                }
             }
 
             bool success = submitInventoryUpdate.Invoke(inventory);
 
             JobResult result = new JobResult()
             {
+                JobHistoryId = jobConfiguration.JobHistoryId,
                 Result = success ? Orchestrators.Common.Enums.OrchestratorJobStatusJobResult.Success : Orchestrators.Common.Enums.OrchestratorJobStatusJobResult.Failure
             };
+
             return result;
         }
     }

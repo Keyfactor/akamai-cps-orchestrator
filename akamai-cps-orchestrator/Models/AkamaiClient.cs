@@ -52,7 +52,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
 
             _http.DefaultRequestHeaders.Clear();
             _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
-            PrepareAuth("GET", $"Accept:{acceptHeader}", path);
+            PrepareAuth("GET", path, $"Accept:{acceptHeader}");
 
             var response = _http.GetAsync(path).Result;
             string json = response.Content.ReadAsStringAsync().Result;
@@ -141,7 +141,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
 
             _http.DefaultRequestHeaders.Clear();
             _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
-            PrepareAuth("GET", $"Accept:{acceptHeader}", path);
+            PrepareAuth("GET", path, $"Accept:{acceptHeader}");
 
             var response = _http.GetAsync(path).Result;
             string json = response.Content.ReadAsStringAsync().Result;
@@ -185,7 +185,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             _http.DefaultRequestHeaders.Clear();
             _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
             _http.DefaultRequestHeaders.Add("Content-Type", contentHeader);
-            PrepareAuth("PUT", $"Accept:{acceptHeader}\tContent-Type:{contentHeader}", path);
+            PrepareAuth("PUT", path, $"Accept:{acceptHeader}\tContent-Type:{contentHeader}");
 
             var response = _http.GetAsync(path).Result;
             string json = response.Content.ReadAsStringAsync().Result;
