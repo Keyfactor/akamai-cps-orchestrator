@@ -92,6 +92,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
 
             JobResult result = new JobResult()
             {
+                JobHistoryId = jobConfiguration.JobHistoryId,
                 Result = Orchestrators.Common.Enums.OrchestratorJobStatusJobResult.Success
             };
             return result;

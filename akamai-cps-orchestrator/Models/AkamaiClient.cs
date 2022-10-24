@@ -55,7 +55,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             PrepareAuth("GET", path, $"Accept:{acceptHeader}");
 
             var response = _http.GetAsync(path).Result;
-            string json = response.Content.ReadAsStringAsync().Result;
+            string json = ReadHttpResponse(response);
             Deployment deployment = JsonConvert.DeserializeObject<Deployment>(json);
 
             if (IsProduction)
@@ -64,6 +64,8 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             }
             else
             {
+                // staging certificate shows up for completed production deployments
+                // to display certs ONLY in staging, need to verify it is not in production
                 return deployment.staging.primaryCertificate;
             }
         }
@@ -78,7 +80,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             PrepareAuth("GET", path, $"Accept:{acceptHeader}");
 
             var response = _http.GetAsync(path).Result;
-            string json = response.Content.ReadAsStringAsync().Result;
+            string json = ReadHttpResponse(response);
             return JsonConvert.DeserializeObject<Enrollments>(json).enrollments;
         }
 
@@ -92,17 +94,20 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             PrepareAuth("GET", path, $"Accept:{acceptHeader}");
 
             var response = _http.GetAsync(path).Result;
-            string json = response.Content.ReadAsStringAsync().Result;
+            string json = ReadHttpResponse(response);
             return JsonConvert.DeserializeObject<Enrollment>(json);
         }
 
         public CreatedEnrollment CreateEnrollment(Enrollment newEnrollment, string contractId)
         {
+            // enable change management if it is a staging enrollment
+            newEnrollment.changeManagement = !IsProduction;
+
             var path = $"{Constants.Endpoints.Enrollments}?contractId={contractId}";
             var body = JsonConvert.SerializeObject(newEnrollment, _serializerSettings);
             var requestContent = new StringContent(body);
             var acceptHeader = "application/vnd.akamai.cps.enrollment-status.v1+json";
-            var contentHeader = "application/vnd.akamai.cps.enrollment.v4+json";
+            var contentHeader = "application/vnd.akamai.cps.enrollment.v11+json";
 
             _http.DefaultRequestHeaders.Clear();
             _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
@@ -110,7 +115,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             PrepareAuth("POST", path, $"Accept:{acceptHeader}\tContent-Type:{contentHeader}", body);
 
             var response = _http.PostAsync(path, requestContent).Result;
-            string json = response.Content.ReadAsStringAsync().Result;
+            string json = ReadHttpResponse(response);
             CreatedEnrollment enrollment = JsonConvert.DeserializeObject<CreatedEnrollment>(json);
             return enrollment;
         }
@@ -128,7 +133,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             PrepareAuth("PUT", path, $"Accept:{acceptHeader}\tContent-Type:{contentHeader}", body);
 
             var response = _http.PutAsync(path, new StringContent(body)).Result;
-            string json = response.Content.ReadAsStringAsync().Result;
+            string json = ReadHttpResponse(response);
             CreatedEnrollment updatedEnrollment = JsonConvert.DeserializeObject<CreatedEnrollment>(json);
             return updatedEnrollment;
         }
@@ -144,7 +149,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             PrepareAuth("GET", path, $"Accept:{acceptHeader}");
 
             var response = _http.GetAsync(path).Result;
-            string json = response.Content.ReadAsStringAsync().Result;
+            string json = ReadHttpResponse(response);
             PendingChange change = JsonConvert.DeserializeObject<PendingChange>(json);
 
             return change.csrs[0].csr;
@@ -172,7 +177,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             PrepareAuth("POST", path, $"Accept:{acceptHeader}\tContent-Type:{contentHeader}", body);
 
             var response = _http.PostAsync(path, new StringContent(body)).Result;
-            string json = response.Content.ReadAsStringAsync().Result;
+            string json = ReadHttpResponse(response);
             return;
         }
 
@@ -188,8 +193,22 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             PrepareAuth("PUT", path, $"Accept:{acceptHeader}\tContent-Type:{contentHeader}");
 
             var response = _http.GetAsync(path).Result;
-            string json = response.Content.ReadAsStringAsync().Result;
+            string json = ReadHttpResponse(response);
             return;
+        }
+
+        private string ReadHttpResponse(HttpResponseMessage response)
+        {
+            string responseMessage = response.Content.ReadAsStringAsync().Result;
+            if (response.IsSuccessStatusCode)
+            {
+                return responseMessage;
+            }
+            else
+            {
+                // log Akamai error reason from response
+                throw new Exception(responseMessage);
+            }
         }
 
         private void PrepareAuth(string method, string path, string headers, string requestBody = null)

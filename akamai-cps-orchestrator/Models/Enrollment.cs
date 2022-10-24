@@ -14,12 +14,12 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
         public bool changeManagement = false;
         public EnrollmentCSR csr;
         public bool enableMultiStackedCertificates = false;
-        public NetworkConfiguration networkConfiguration;
+        public NetworkConfiguration networkConfiguration = new NetworkConfiguration();
         public ContactInfo org;
         public string ra = "third-party";
         public string signatureAlgorithm = "SHA-256";
         public ContactInfo techContact;
-        public ThirdParty thirdParty;
+        public ThirdParty thirdParty = new ThirdParty();
         public string validationType = "third-party";
     }
 
