@@ -69,13 +69,13 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             else
             {
                 // no existing enrollment, create a new one
-                enrollment = client.CreateEnrollment(reenrollment, contractId);
-                enrollmentId = enrollment.enrollment;
+                enrollment = client.CreateEnrollment(reenrollment, contractId); // TODO: handle 409 when CN already exists
+                enrollmentId = enrollment.enrollment.Split('/')[^1]; // last element of the location url is the Enrollment Id
             }
 
             // update the enrollment and get CSR
-            string changeId = enrollment.changes[0];
-            string csr = client.GetCSR(enrollmentId, changeId);
+            string changeId = enrollment.changes[0].Split('/')[^1]; // last element of the location url is the Change Id
+            string csr = client.GetCSR(enrollmentId, changeId, keyType); // need to delay / wait with a 404 present is processed in AKamai
 
             // submit csr
             var x509Cert = submitReenrollmentUpdate.Invoke(csr);
@@ -84,7 +84,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             // build PEM content
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("-----BEGIN CERTIFICATE-----");
-            sb.AppendLine(Convert.ToBase64String(x509Cert.RawData, Base64FormattingOptions.InsertLineBreaks));
+            sb.AppendLine(Convert.ToBase64String(x509Cert.RawData));
             sb.AppendLine("-----END CERTIFICATE-----");
             var certContent = sb.ToString();
 
