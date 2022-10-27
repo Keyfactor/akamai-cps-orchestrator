@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -124,21 +125,22 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
         {
             var path = Constants.Endpoints.Enrollments;
             var body = JsonConvert.SerializeObject(enrollment);
+            var requestContent = new StringContent(body);
             var acceptHeader = "application/vnd.akamai.cps.enrollment-status.v1+json";
             var contentHeader = "application/vnd.akamai.cps.enrollment.v11+json";
 
             _http.DefaultRequestHeaders.Clear();
             _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
-            _http.DefaultRequestHeaders.Add("Content-Type", contentHeader);
+            requestContent.Headers.ContentType = new MediaTypeHeaderValue(contentHeader);
             PrepareAuth("PUT", path, $"Accept:{acceptHeader}\tContent-Type:{contentHeader}", body);
 
-            var response = _http.PutAsync(path, new StringContent(body)).Result;
+            var response = _http.PutAsync(path, requestContent).Result;
             string json = ReadHttpResponse(response);
             CreatedEnrollment updatedEnrollment = JsonConvert.DeserializeObject<CreatedEnrollment>(json);
             return updatedEnrollment;
         }
 
-        public string GetCSR(string enrollmentId, string changeId)
+        public string GetCSR(string enrollmentId, string changeId, string keyType)
         {
             // get CSR from new pending change
             var path = string.Format(Constants.Endpoints.GetChange, enrollmentId, changeId);
@@ -152,31 +154,38 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             string json = ReadHttpResponse(response);
             PendingChange change = JsonConvert.DeserializeObject<PendingChange>(json);
 
-            return change.csrs[0].csr;
+            // get CSR for correct key type of reenrollment template
+            PendingCSR csr = change.csrs.Where(csr => string.Equals(csr.keyAlgorithm, keyType, StringComparison.CurrentCultureIgnoreCase)).SingleOrDefault();
+
+            return csr.csr;
         }
 
         public void PostCertificate(string enrollmentId, string changeId, string certificate, string keyAlgorithm, string trustChain = null)
         {
             var path = string.Format(Constants.Endpoints.UpdateChange, enrollmentId, changeId);
-            CertificateInfo[] cert = new CertificateInfo[]
+            ThirdPartyCertificates cert = new ThirdPartyCertificates()
             {
-                new CertificateInfo()
+                certificatesAndTrustChains = new CertificateInfo[]
                 {
-                    certificate = certificate,
-                    keyAlgorithm = keyAlgorithm,
-                    trustChain = trustChain
+                    new CertificateInfo()
+                    {
+                        certificate = certificate,
+                        keyAlgorithm = keyAlgorithm,
+                        trustChain = trustChain
+                    }
                 }
             };
             var body = JsonConvert.SerializeObject(cert);
+            var requestContent = new StringContent(body);
             var acceptHeader = "application/vnd.akamai.cps.change-id.v1+json";
-            var contentHeader = "application/vnd.akamai.cps.acknowledgement.v1+json";
+            var contentHeader = "application/vnd.akamai.cps.certificate-and-trust-chain.v2+json";
 
             _http.DefaultRequestHeaders.Clear();
             _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
-            _http.DefaultRequestHeaders.Add("Content-Type", contentHeader);
+            requestContent.Headers.ContentType = new MediaTypeHeaderValue(contentHeader);
             PrepareAuth("POST", path, $"Accept:{acceptHeader}\tContent-Type:{contentHeader}", body);
 
-            var response = _http.PostAsync(path, new StringContent(body)).Result;
+            var response = _http.PostAsync(path, requestContent).Result;
             string json = ReadHttpResponse(response);
             return;
         }

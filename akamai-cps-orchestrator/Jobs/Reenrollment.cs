@@ -84,11 +84,13 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             // build PEM content
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("-----BEGIN CERTIFICATE-----");
-            sb.AppendLine(Convert.ToBase64String(x509Cert.RawData));
+            sb.AppendLine(Convert.ToBase64String(x509Cert.RawData, Base64FormattingOptions.InsertLineBreaks));
             sb.AppendLine("-----END CERTIFICATE-----");
             var certContent = sb.ToString();
 
-            client.PostCertificate(enrollmentId, changeId, certContent, x509Cert.GetKeyAlgorithm());
+            certContent = certContent.Replace("\r", "");
+
+            client.PostCertificate(enrollmentId, changeId, certContent, keyType);
 
             JobResult result = new JobResult()
             {
