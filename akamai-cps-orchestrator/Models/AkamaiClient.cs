@@ -1,16 +1,19 @@
-﻿using System;
+﻿using Keyfactor.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
 {
     public class AkamaiClient
     {
+        private ILogger _logger;
         private HttpClient _http;
         private AkamaiAuth _auth;
         private JsonSerializerSettings _serializerSettings = new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore };
@@ -21,8 +24,9 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
         public string Hostname;
         public bool IsProduction = false;
 
-        public AkamaiClient(string clientMachine, AkamaiAuth auth)
+        public AkamaiClient(ILogger logger, string clientMachine, AkamaiAuth auth)
         {
+            _logger = logger;
             Hostname = clientMachine;
 
             _auth = auth;
@@ -216,7 +220,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             else
             {
                 // log Akamai error reason from response
-                throw new Exception(responseMessage);
+                throw new AkamaiClientException(responseMessage, response.StatusCode);
             }
         }
 

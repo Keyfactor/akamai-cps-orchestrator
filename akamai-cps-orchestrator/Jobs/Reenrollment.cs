@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Text;
 using Newtonsoft.Json;
 using System.IO;
+using Microsoft.Extensions.Logging;
+using Keyfactor.Logging;
 
 namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
 {
@@ -14,14 +16,14 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
 
         public JobResult ProcessJob(ReenrollmentJobConfiguration jobConfiguration, SubmitReenrollmentCSR submitReenrollmentUpdate)
         {
+            ILogger logger = LogHandler.GetClassLogger<Reenrollment>();
             AkamaiAuth auth = new AkamaiAuth();
-            AkamaiClient client = new AkamaiClient(jobConfiguration.CertificateStoreDetails.ClientMachine, auth);
+            AkamaiClient client = new AkamaiClient(logger, jobConfiguration.CertificateStoreDetails.ClientMachine, auth);
 
-            client.SetDeploymentType(jobConfiguration.CertificateStoreDetails.StorePath);
+            string enrollmentType = jobConfiguration.CertificateStoreDetails.StorePath;
+            client.SetDeploymentType(enrollmentType);
 
-            // store deployment info ??
-
-            // get enrollment
+            logger.LogTrace("Populating enrollment request information.");
             CreatedEnrollment enrollment;
             var allJobProps = jobConfiguration.JobProperties; // contains entry parameters - EnrollmentId, ContractId
             string subject = allJobProps["subjectText"].ToString();
@@ -51,10 +53,11 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                 }
             };
 
+            logger.LogTrace("Loading contact info from file.");
             string extensionDirectory = Path.GetDirectoryName(this.GetType().Assembly.Location);
             string jsonContactInfo = File.ReadAllText($"{extensionDirectory}{Path.DirectorySeparatorChar}config.json");
             JsonConvert.PopulateObject(jsonContactInfo, reenrollment);
-
+            logger.LogTrace("Enrollment request information finished populating.");
 
             // if not present as an entry parameter, need to make a new enrollment
             string enrollmentId;
@@ -62,23 +65,61 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             if (enrollmentExists && existingEnrollmentId != null)
             {
                 enrollmentId = existingEnrollmentId.ToString();
+                logger.LogDebug($"Looking for existing enrollment - {enrollmentId}");
                 Enrollment existingEnrollment = client.GetEnrollment(enrollmentId); // TODO: detect when enrollment with this id does not actually exist
                 // make needed enrollment changes, merge ?
+                logger.LogDebug($"Found existing enrollment - {enrollmentId}");
                 enrollment = client.UpdateEnrollment(enrollmentId, reenrollment);
+                logger.LogInformation($"Updated existing enrollment - {enrollmentId}");
             }
             else
             {
                 // no existing enrollment, create a new one
                 enrollment = client.CreateEnrollment(reenrollment, contractId); // TODO: handle 409 when CN already exists
                 enrollmentId = enrollment.enrollment.Split('/')[^1]; // last element of the location url is the Enrollment Id
+                logger.LogInformation($"Created new enrollment - {enrollmentId}");
             }
 
             // update the enrollment and get CSR
             string changeId = enrollment.changes[0].Split('/')[^1]; // last element of the location url is the Change Id
-            string csr = client.GetCSR(enrollmentId, changeId, keyType); // need to delay / wait with a 404 present is processed in AKamai
+            logger.LogDebug("Retrieving CSR for enrollment change.");
+
+            //
+            string csr = null;  
+            int retryCount = 0; // track retry count for getting CSR
+            // need to delay / wait with a 404 until CSR is processed in Akamai
+            while (string.IsNullOrEmpty(csr) && retryCount < 5)
+            {
+                try
+                {
+                    csr = client.GetCSR(enrollmentId, changeId, keyType);
+                }
+                catch (AkamaiClientException e) when (e.ClientErrorCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    // wait 30 seconds before checking for processed CSR again
+                    retryCount++;
+                    System.Threading.Thread.Sleep(TimeSpan.FromSeconds(30));
+                }
+            }
+
+            // if no CSR received, fail job
+            if (string.IsNullOrEmpty(csr))
+            {
+                logger.LogError($"Maximum retry count reached. CSR was not finished processing for new enrollment - {enrollmentId}");
+                JobResult errorResult = new JobResult()
+                {
+                    JobHistoryId = jobConfiguration.JobHistoryId,
+                    Result = Orchestrators.Common.Enums.OrchestratorJobStatusJobResult.Failure
+                };
+                return errorResult;
+            }
+
+            logger.LogDebug("Retrieved CSR content for enrollment change.");
 
             // submit csr
+            logger.LogTrace("Submitting CSR to Keyfactor");
             var x509Cert = submitReenrollmentUpdate.Invoke(csr);
+            logger.LogDebug("Certificate returned from CSR enrollment.");
 
             // submit certificate info to deployment
             // build PEM content
@@ -90,7 +131,9 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
 
             certContent = certContent.Replace("\r", "");
 
+            logger.LogTrace("Posting certificate to Akamai.");
             client.PostCertificate(enrollmentId, changeId, certContent, keyType);
+            logger.LogInformation($"Certificate uploaded for enrollment - {enrollmentId}");
 
             JobResult result = new JobResult()
             {
