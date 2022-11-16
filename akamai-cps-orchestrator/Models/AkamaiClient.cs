@@ -63,15 +63,16 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             string json = ReadHttpResponse(response);
             Deployment deployment = JsonConvert.DeserializeObject<Deployment>(json);
 
+            // deployments are returned for in process enrollments, so null coalesce to filter for fully deployed certs
             if (IsProduction)
             {
-                return deployment.production.primaryCertificate;
+                return deployment?.production?.primaryCertificate;
             }
             else
             {
                 // staging certificate shows up for completed production deployments
                 // to display certs ONLY in staging, need to verify it is not in production
-                return deployment.staging.primaryCertificate;
+                return deployment?.staging?.primaryCertificate;
             }
         }
 
@@ -127,8 +128,8 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
 
         public CreatedEnrollment UpdateEnrollment(string enrollmentId, Enrollment enrollment)
         {
-            var path = Constants.Endpoints.Enrollments;
-            var body = JsonConvert.SerializeObject(enrollment);
+            var path = $"{Constants.Endpoints.Enrollments}/{enrollmentId}?force-renewal=true&allow-cancel-pending-changes=true"; //&allow-staging-bypass={IsProduction.ToString().ToLower()}";
+            var body = JsonConvert.SerializeObject(enrollment, _serializerSettings);
             var requestContent = new StringContent(body);
             var acceptHeader = "application/vnd.akamai.cps.enrollment-status.v1+json";
             var contentHeader = "application/vnd.akamai.cps.enrollment.v11+json";
@@ -136,7 +137,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             _http.DefaultRequestHeaders.Clear();
             _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
             requestContent.Headers.ContentType = new MediaTypeHeaderValue(contentHeader);
-            PrepareAuth("PUT", path, $"Accept:{acceptHeader}\tContent-Type:{contentHeader}", body);
+            PrepareAuth("PUT", path, $"Accept:{acceptHeader}\tContent-Type:{contentHeader}"); // dont sign PUT body
 
             var response = _http.PutAsync(path, requestContent).Result;
             string json = ReadHttpResponse(response);
@@ -226,7 +227,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
 
         private void PrepareAuth(string method, string path, string headers, string requestBody = null)
         {
-            // passing along standard HTTP headers not needed (i.e. accept header)
+            // TODO (remove): passing along standard HTTP headers not needed (i.e. accept header)
             var authHeader = _auth.GenerateAuthHeader(method, Hostname, path, headers, requestBody);
             _http.DefaultRequestHeaders.Authorization = authHeader;
         }

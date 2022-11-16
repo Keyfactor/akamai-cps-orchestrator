@@ -29,7 +29,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             string subject = allJobProps["subjectText"].ToString();
             string keyType = allJobProps["keyType"].ToString();
             string contractId = allJobProps["ContractId"].ToString();
-            // TODO: add entry parameters for SANs on reenrollment?
+            string sans = allJobProps["Sans"].ToString(); // colon split sans
 
             string[] subjectParams = subject.Split(',');
             var subjectValues = new Dictionary<string, string>();
@@ -49,7 +49,9 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                     l = subjectValues.GetValueOrDefault("L"),
                     o = subjectValues.GetValueOrDefault("O"),
                     ou = subjectValues.GetValueOrDefault("OU"),
-                    st = subjectValues.GetValueOrDefault("ST")
+                    st = subjectValues.GetValueOrDefault("ST"),
+                    // split sans entered
+                    sans = sans.Split(',')
                 }
             };
 
@@ -67,9 +69,12 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                 enrollmentId = existingEnrollmentId.ToString();
                 logger.LogDebug($"Looking for existing enrollment - {enrollmentId}");
                 Enrollment existingEnrollment = client.GetEnrollment(enrollmentId); // TODO: detect when enrollment with this id does not actually exist
-                // make needed enrollment changes, merge ?
+
+                // use existing enrollment information, with reenrollment CSR data
+                existingEnrollment.csr = reenrollment.csr;
+
                 logger.LogDebug($"Found existing enrollment - {enrollmentId}");
-                enrollment = client.UpdateEnrollment(enrollmentId, reenrollment);
+                enrollment = client.UpdateEnrollment(enrollmentId, existingEnrollment);
                 logger.LogInformation($"Updated existing enrollment - {enrollmentId}");
             }
             else
@@ -134,6 +139,8 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             logger.LogTrace("Posting certificate to Akamai.");
             client.PostCertificate(enrollmentId, changeId, certContent, keyType);
             logger.LogInformation($"Certificate uploaded for enrollment - {enrollmentId}");
+
+            // check for warning to force deployment
 
             JobResult result = new JobResult()
             {
