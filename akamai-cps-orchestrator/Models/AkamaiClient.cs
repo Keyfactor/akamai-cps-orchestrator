@@ -211,6 +211,25 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             return;
         }
 
+        public void AcknowledgeWarnings(string enrollmentId, string changeId)
+        {
+            var path = string.Format(Constants.Endpoints.AcknowledgePostVerification, enrollmentId, changeId);
+            var ack = new Acknowledgement();
+            var body = JsonConvert.SerializeObject(ack);
+            var requestContent = new StringContent(body);
+            var acceptHeader = "application/vnd.akamai.cps.change-id.v1+json";
+            var contentHeader = "application/vnd.akamai.cps.acknowledgement.v1+json";
+
+            _http.DefaultRequestHeaders.Clear();
+            _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
+            requestContent.Headers.ContentType = new MediaTypeHeaderValue(contentHeader);
+            PrepareAuth("POST", path, $"Accept:{acceptHeader}\tContent-Type:{contentHeader}", body);
+
+            var response = _http.PostAsync(path, requestContent).Result;
+            string json = ReadHttpResponse(response);
+            return;
+        }
+
         private string ReadHttpResponse(HttpResponseMessage response)
         {
             string responseMessage = response.Content.ReadAsStringAsync().Result;

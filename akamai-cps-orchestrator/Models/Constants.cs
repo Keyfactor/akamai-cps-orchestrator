@@ -20,6 +20,8 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             // str replace {1} with changeId
             // 'third-party-cert-and-trust-chain' is a param for uploading a Third-Party cert
             public static string UpdateChange = Changes + "/{1}/input/update/third-party-cert-and-trust-chain";
+            // 'post-verification-warnings-ack' is a param for acknowleging warnings after uploading a cert
+            public static string AcknowledgePostVerification = Changes + "/{1}/input/update/post-verification-warnings-ack";
 
             // str replace {1} with changeId
             public static string UpdateDeployment = Changes + "/{1}/deployment-schedule";

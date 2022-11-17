@@ -102,6 +102,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                 catch (AkamaiClientException e) when (e.ClientErrorCode == System.Net.HttpStatusCode.NotFound)
                 {
                     // wait 30 seconds before checking for processed CSR again
+                    logger.LogTrace("Akamai CSR not ready yet. Sleeping process to try again.");
                     retryCount++;
                     System.Threading.Thread.Sleep(TimeSpan.FromSeconds(30));
                 }
@@ -140,7 +141,10 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             client.PostCertificate(enrollmentId, changeId, certContent, keyType);
             logger.LogInformation($"Certificate uploaded for enrollment - {enrollmentId}");
 
-            // check for warning to force deployment
+            // akcnowledge warnings to force deployment
+            logger.LogTrace("Acknowledging warnings for finished enrollment.");
+            client.AcknowledgeWarnings(enrollmentId, changeId);
+            logger.LogDebug($"Warnings acknowleged for enrollment - {enrollmentId}");
 
             JobResult result = new JobResult()
             {
