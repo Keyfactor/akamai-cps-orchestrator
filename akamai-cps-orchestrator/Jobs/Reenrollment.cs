@@ -17,7 +17,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
         public JobResult ProcessJob(ReenrollmentJobConfiguration jobConfiguration, SubmitReenrollmentCSR submitReenrollmentUpdate)
         {
             ILogger logger = LogHandler.GetClassLogger<Reenrollment>();
-            AkamaiAuth auth = new AkamaiAuth();
+            AkamaiAuth auth = new AkamaiAuth(jobConfiguration.JobProperties);
             AkamaiClient client = new AkamaiClient(logger, jobConfiguration.CertificateStoreDetails.ClientMachine, auth);
 
             string enrollmentType = jobConfiguration.CertificateStoreDetails.StorePath;
@@ -25,11 +25,11 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
 
             logger.LogTrace("Populating enrollment request information.");
             CreatedEnrollment enrollment;
-            var allJobProps = jobConfiguration.JobProperties; // contains entry parameters - EnrollmentId, ContractId
+            var allJobProps = jobConfiguration.JobProperties; // contains entry parameters, contact addresses - EnrollmentId, ContractId
             string subject = allJobProps["subjectText"].ToString();
             string keyType = allJobProps["keyType"].ToString();
             string contractId = allJobProps["ContractId"].ToString();
-            string sans = allJobProps["Sans"].ToString(); // colon split sans
+            string sans = allJobProps["Sans"].ToString(); // ampersand split sans
 
             string[] subjectParams = subject.Split(',');
             var subjectValues = new Dictionary<string, string>();
@@ -51,14 +51,53 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                     ou = subjectValues.GetValueOrDefault("OU"),
                     st = subjectValues.GetValueOrDefault("ST"),
                     // split sans entered
-                    sans = sans.Split(',')
+                    sans = sans.Split('&')
                 }
             };
 
-            logger.LogTrace("Loading contact info from file.");
-            string extensionDirectory = Path.GetDirectoryName(this.GetType().Assembly.Location);
-            string jsonContactInfo = File.ReadAllText($"{extensionDirectory}{Path.DirectorySeparatorChar}config.json");
-            JsonConvert.PopulateObject(jsonContactInfo, reenrollment);
+            logger.LogTrace("Loading contact info from job properties.");
+            reenrollment.adminContact = new ContactInfo()
+            {
+                addressLineOne = allJobProps["admin.addressLineOne"].ToString(),
+                addressLineTwo = allJobProps["admin.addressLineTwo"].ToString(),
+                city = allJobProps["admin.city"].ToString(),
+                country = allJobProps["admin.country"].ToString(),
+                email = allJobProps["admin.email"].ToString(),
+                firstName = allJobProps["admin.firstName"].ToString(),
+                lastName = allJobProps["admin.lastName"].ToString(),
+                organizationName = allJobProps["admin.organizationName"].ToString(),
+                phone = allJobProps["admin.phone"].ToString(),
+                postalCode = allJobProps["admin.postalCode"].ToString(),
+                region = allJobProps["admin.region"].ToString(),
+                title = allJobProps["admin.title"].ToString()
+            };
+            reenrollment.org = new ContactInfo()
+            {
+                addressLineOne = allJobProps["org.addressLineOne"].ToString(),
+                addressLineTwo = allJobProps["org.addressLineTwo"].ToString(),
+                city = allJobProps["org.city"].ToString(),
+                country = allJobProps["org.country"].ToString(),
+                name = allJobProps["org.organizationName"].ToString(),
+                phone = allJobProps["org.phone"].ToString(),
+                postalCode = allJobProps["org.postalCode"].ToString(),
+                region = allJobProps["org.region"].ToString()
+            };
+            reenrollment.techContact = new ContactInfo()
+            {
+                addressLineOne = allJobProps["tech.addressLineOne"].ToString(),
+                addressLineTwo = allJobProps["tech.addressLineTwo"].ToString(),
+                city = allJobProps["tech.city"].ToString(),
+                country = allJobProps["tech.country"].ToString(),
+                email = allJobProps["tech.email"].ToString(),
+                firstName = allJobProps["tech.firstName"].ToString(),
+                lastName = allJobProps["tech.lastName"].ToString(),
+                organizationName = allJobProps["tech.organizationName"].ToString(),
+                phone = allJobProps["tech.phone"].ToString(),
+                postalCode = allJobProps["tech.postalCode"].ToString(),
+                region = allJobProps["tech.region"].ToString(),
+                title = allJobProps["tech.title"].ToString()
+            };
+
             logger.LogTrace("Enrollment request information finished populating.");
 
             // if not present as an entry parameter, need to make a new enrollment

@@ -17,7 +17,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
         public JobResult ProcessJob(InventoryJobConfiguration jobConfiguration, SubmitInventoryUpdate submitInventoryUpdate)
         {
             ILogger logger = LogHandler.GetClassLogger<Inventory>();
-            AkamaiAuth auth = new AkamaiAuth();
+            AkamaiAuth auth = new AkamaiAuth(jobConfiguration.JobProperties);
             AkamaiClient client = new AkamaiClient(logger, jobConfiguration.CertificateStoreDetails.ClientMachine, auth);
 
             string enrollmentType = jobConfiguration.CertificateStoreDetails.StorePath;

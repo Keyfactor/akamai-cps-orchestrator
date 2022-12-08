@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
@@ -16,21 +15,11 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
         private string Nonce { get { return Guid.NewGuid().ToString(); } }
         public readonly string AuthType = "EG1-HMAC-SHA256";
 
-        public AkamaiAuth()
+        public AkamaiAuth(Dictionary<string, object> jobProperties)
         {
-            string extensionDirectory = Path.GetDirectoryName(this.GetType().Assembly.Location);
-            string[] edgeGridInfo = File.ReadAllLines($"{extensionDirectory}{Path.DirectorySeparatorChar}.edgerc");
-
-            // handling only 1 entry in the .edgerc file
-            // expected structure:
-            // client_secret = xxxx
-            // host = xxxx
-            // access_token = xxxx
-            // client_token = xxxx
-
-            _clientSecret = edgeGridInfo[0].Split('=', 2)[1].Trim();
-            _clientToken = edgeGridInfo[3].Split('=', 2)[1].Trim();
-            _accessToken = edgeGridInfo[2].Split('=', 2)[1].Trim();
+            _clientSecret = jobProperties["client_secret"].ToString();
+            _clientToken = jobProperties["client_token"].ToString();
+            _accessToken = jobProperties["access_token"].ToString();
         }
 
         public AuthenticationHeaderValue GenerateAuthHeader(string requestMethod, string host, string path, string headers, string requestBody = null)
