@@ -1,0 +1,31 @@
+{
+    "$schema": "https://keyfactor.github.io/integration-manifest-schema.json",
+    "integration_type": "orchestrator",
+    "name": "Akamai Certificate Provisioning System (CPS)",
+    "status": "pilot",
+    "update_catalog": false,
+    "link_github": false,
+    "description": "The Akamai Certificate Provisioning System (CPS) Orchestrator is capable of inventorying existing certificates on the Akamai platform, and performing enrollments and renewals of certificates with keys generated on the Akamai system.",
+    "about": {
+      "orchestrator": {
+        "win": {
+          "supportsCreateStore": false,
+          "supportsDiscovery": false,
+          "supportsManagementAdd": false,
+          "supportsManagementRemove": false,
+          "supportsReenrollment": true,
+          "supportsInventory": true,
+          "platformSupport": "Unused"
+        },
+        "linux": {
+          "supportsCreateStore": false,
+          "supportsDiscovery": false,
+          "supportsManagementAdd": false,
+          "supportsManagementRemove": false,
+          "supportsReenrollment": true,
+          "supportsInventory": true,
+          "platformSupport": "Unused"
+        }
+      }
+    }
+}
