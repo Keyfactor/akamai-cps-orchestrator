@@ -15,11 +15,11 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
         private string Nonce { get { return Guid.NewGuid().ToString(); } }
         public readonly string AuthType = "EG1-HMAC-SHA256";
 
-        public AkamaiAuth(Dictionary<string, object> jobProperties)
+        public AkamaiAuth(Dictionary<string, string> jobProperties)
         {
-            _clientSecret = jobProperties["client_secret"].ToString();
-            _clientToken = jobProperties["client_token"].ToString();
-            _accessToken = jobProperties["access_token"].ToString();
+            _clientSecret = jobProperties["client_secret"];
+            _clientToken = jobProperties["client_token"];
+            _accessToken = jobProperties["access_token"];
         }
 
         public AuthenticationHeaderValue GenerateAuthHeader(string requestMethod, string host, string path, string headers, string requestBody = null)
