@@ -1,10 +1,23 @@
-﻿using Keyfactor.Orchestrators.Extensions;
+﻿// Copyright 2023 Keyfactor
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//     http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using Keyfactor.Orchestrators.Extensions;
 using Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using Newtonsoft.Json;
-using System.IO;
 using Microsoft.Extensions.Logging;
 using Keyfactor.Logging;
 
@@ -14,23 +27,25 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
     {
         public string ExtensionName => "Akamai";
 
+        private ILogger _logger;
+
         public JobResult ProcessJob(ReenrollmentJobConfiguration jobConfiguration, SubmitReenrollmentCSR submitReenrollmentUpdate)
         {
-            ILogger logger = LogHandler.GetClassLogger<Reenrollment>();
+            _logger = LogHandler.GetClassLogger<Reenrollment>();
             var storeProps = JsonConvert.DeserializeObject<Dictionary<string, string>>(jobConfiguration.CertificateStoreDetails.Properties);
             AkamaiAuth auth = new AkamaiAuth(storeProps);
-            AkamaiClient client = new AkamaiClient(logger, jobConfiguration.CertificateStoreDetails.ClientMachine, auth);
+            AkamaiClient client = new AkamaiClient(_logger, jobConfiguration.CertificateStoreDetails.ClientMachine, auth);
 
             string enrollmentType = jobConfiguration.CertificateStoreDetails.StorePath;
             client.SetDeploymentType(enrollmentType);
 
-            logger.LogTrace("Populating enrollment request information.");
+            _logger.LogTrace("Populating enrollment request information.");
             CreatedEnrollment enrollment;
             var allJobProps = jobConfiguration.JobProperties; // contains entry parameters, contact addresses - EnrollmentId, ContractId
-            string subject = allJobProps["subjectText"].ToString();
-            string keyType = allJobProps["keyType"].ToString();
-            string contractId = allJobProps["ContractId"].ToString();
-            string sans = allJobProps["Sans"].ToString(); // ampersand split sans
+            string subject = GetRequiredValue(allJobProps, "subjectText");
+            string keyType = GetRequiredValue(allJobProps, "keyType");
+            string contractId = GetRequiredValue(allJobProps, "ContractId");
+            string sans = GetRequiredValue(allJobProps, "Sans"); // ampersand split sans
 
             string[] subjectParams = subject.Split(',');
             var subjectValues = new Dictionary<string, string>();
@@ -56,50 +71,50 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                 }
             };
 
-            logger.LogTrace("Loading contact info from job properties.");
+            _logger.LogTrace("Loading contact info from job properties.");
             reenrollment.adminContact = new ContactInfo()
             {
-                addressLineOne = allJobProps["admin-addressLineOne"].ToString(),
+                addressLineOne = GetRequiredValue(allJobProps, "admin-addressLineOne"),
                 addressLineTwo = allJobProps["admin-addressLineTwo"]?.ToString(),
-                city = allJobProps["admin-city"].ToString(),
-                country = allJobProps["admin-country"].ToString(),
-                email = allJobProps["admin-email"].ToString(),
-                firstName = allJobProps["admin-firstName"].ToString(),
-                lastName = allJobProps["admin-lastName"].ToString(),
-                organizationName = allJobProps["admin-organizationName"].ToString(),
-                phone = allJobProps["admin-phone"].ToString(),
-                postalCode = allJobProps["admin-postalCode"].ToString(),
-                region = allJobProps["admin-region"].ToString(),
-                title = allJobProps["admin-title"].ToString()
+                city = GetRequiredValue(allJobProps, "admin-city"),
+                country = GetRequiredValue(allJobProps, "admin-country"),
+                email = GetRequiredValue(allJobProps, "admin-email"),
+                firstName = GetRequiredValue(allJobProps, "admin-firstName"),
+                lastName = GetRequiredValue(allJobProps, "admin-lastName"),
+                organizationName = GetRequiredValue(allJobProps, "admin-organizationName"),
+                phone = GetRequiredValue(allJobProps, "admin-phone"),
+                postalCode = GetRequiredValue(allJobProps, "admin-postalCode"),
+                region = GetRequiredValue(allJobProps, "admin-region"),
+                title = GetRequiredValue(allJobProps, "admin-title")
             };
             reenrollment.org = new ContactInfo()
             {
-                addressLineOne = allJobProps["org-addressLineOne"].ToString(),
+                addressLineOne = GetRequiredValue(allJobProps, "org-addressLineOne"),
                 addressLineTwo = allJobProps["org-addressLineTwo"]?.ToString(),
-                city = allJobProps["org-city"].ToString(),
-                country = allJobProps["org-country"].ToString(),
-                name = allJobProps["org-organizationName"].ToString(),
-                phone = allJobProps["org-phone"].ToString(),
-                postalCode = allJobProps["org-postalCode"].ToString(),
-                region = allJobProps["org-region"].ToString()
+                city = GetRequiredValue(allJobProps, "org-city"),
+                country = GetRequiredValue(allJobProps, "org-country"),
+                name = GetRequiredValue(allJobProps, "org-organizationName"),
+                phone = GetRequiredValue(allJobProps, "org-phone"),
+                postalCode = GetRequiredValue(allJobProps, "org-postalCode"),
+                region = GetRequiredValue(allJobProps, "org-region")
             };
             reenrollment.techContact = new ContactInfo()
             {
-                addressLineOne = allJobProps["tech-addressLineOne"].ToString(),
+                addressLineOne = GetRequiredValue(allJobProps, "tech-addressLineOne"),
                 addressLineTwo = allJobProps["tech-addressLineTwo"]?.ToString(),
-                city = allJobProps["tech-city"].ToString(),
-                country = allJobProps["tech-country"].ToString(),
-                email = allJobProps["tech-email"].ToString(),
-                firstName = allJobProps["tech-firstName"].ToString(),
-                lastName = allJobProps["tech-lastName"].ToString(),
-                organizationName = allJobProps["tech-organizationName"].ToString(),
-                phone = allJobProps["tech-phone"].ToString(),
-                postalCode = allJobProps["tech-postalCode"].ToString(),
-                region = allJobProps["tech-region"].ToString(),
-                title = allJobProps["tech-title"].ToString()
+                city = GetRequiredValue(allJobProps, "tech-city"),
+                country = GetRequiredValue(allJobProps, "tech-country"),
+                email = GetRequiredValue(allJobProps, "tech-email"),
+                firstName = GetRequiredValue(allJobProps, "tech-firstName"),
+                lastName = GetRequiredValue(allJobProps, "tech-lastName"),
+                organizationName = GetRequiredValue(allJobProps, "tech-organizationName"),
+                phone = GetRequiredValue(allJobProps, "tech-phone"),
+                postalCode = GetRequiredValue(allJobProps, "tech-postalCode"),
+                region = GetRequiredValue(allJobProps, "tech-region"),
+                title = GetRequiredValue(allJobProps, "tech-title")
             };
 
-            logger.LogTrace("Enrollment request information finished populating.");
+            _logger.LogTrace("Enrollment request information finished populating.");
 
             // if not present as an entry parameter, need to make a new enrollment
             string enrollmentId;
@@ -107,27 +122,49 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             if (enrollmentExists && existingEnrollmentId != null)
             {
                 enrollmentId = existingEnrollmentId.ToString();
-                logger.LogDebug($"Looking for existing enrollment - {enrollmentId}");
-                Enrollment existingEnrollment = client.GetEnrollment(enrollmentId); // TODO: detect when enrollment with this id does not actually exist
+                _logger.LogDebug($"Looking for existing enrollment - {enrollmentId}");
+                Enrollment existingEnrollment;
+                try
+                {
+                    existingEnrollment = client.GetEnrollment(enrollmentId);
+                }
+                catch
+                {
+                    _logger.LogError($"Failed to find existing enrollment - {enrollmentId}");
+                    throw;
+                }
 
                 // use existing enrollment information, with reenrollment CSR data
                 existingEnrollment.csr = reenrollment.csr;
 
-                logger.LogDebug($"Found existing enrollment - {enrollmentId}");
+                _logger.LogDebug($"Found existing enrollment - {enrollmentId}");
                 enrollment = client.UpdateEnrollment(enrollmentId, existingEnrollment);
-                logger.LogInformation($"Updated existing enrollment - {enrollmentId}");
+                _logger.LogInformation($"Updated existing enrollment - {enrollmentId}");
             }
             else
             {
                 // no existing enrollment, create a new one
-                enrollment = client.CreateEnrollment(reenrollment, contractId); // TODO: handle 409 when CN already exists
+                try
+                {
+                    enrollment = client.CreateEnrollment(reenrollment, contractId);
+                }
+                catch (AkamaiClientException e) when (e.ClientErrorCode == System.Net.HttpStatusCode.Conflict)
+                {
+                    _logger.LogError($"Enrollment already exists for CN {reenrollment.csr.cn}, cannot create new enrollment.");
+                    throw;
+                }
+                catch
+                {
+                    _logger.LogError($"Failed to create new enrollment");
+                    throw;
+                }
                 enrollmentId = enrollment.enrollment.Split('/')[^1]; // last element of the location url is the Enrollment Id
-                logger.LogInformation($"Created new enrollment - {enrollmentId}");
+                _logger.LogInformation($"Created new enrollment - {enrollmentId}");
             }
 
             // update the enrollment and get CSR
             string changeId = enrollment.changes[0].Split('/')[^1]; // last element of the location url is the Change Id
-            logger.LogDebug("Retrieving CSR for enrollment change.");
+            _logger.LogDebug("Retrieving CSR for enrollment change.");
 
             //
             string csr = null;  
@@ -142,7 +179,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                 catch (AkamaiClientException e) when (e.ClientErrorCode == System.Net.HttpStatusCode.NotFound)
                 {
                     // wait 30 seconds before checking for processed CSR again
-                    logger.LogTrace("Akamai CSR not ready yet. Sleeping process to try again.");
+                    _logger.LogTrace("Akamai CSR not ready yet. Sleeping process to try again.");
                     retryCount++;
                     System.Threading.Thread.Sleep(TimeSpan.FromSeconds(30));
                 }
@@ -151,7 +188,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             // if no CSR received, fail job
             if (string.IsNullOrEmpty(csr))
             {
-                logger.LogError($"Maximum retry count reached. CSR was not finished processing for new enrollment - {enrollmentId}");
+                _logger.LogError($"Maximum retry count reached. CSR was not finished processing for new enrollment - {enrollmentId}");
                 JobResult errorResult = new JobResult()
                 {
                     JobHistoryId = jobConfiguration.JobHistoryId,
@@ -160,12 +197,12 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                 return errorResult;
             }
 
-            logger.LogDebug("Retrieved CSR content for enrollment change.");
+            _logger.LogDebug("Retrieved CSR content for enrollment change.");
 
             // submit csr
-            logger.LogTrace("Submitting CSR to Keyfactor");
+            _logger.LogTrace("Submitting CSR to Keyfactor");
             var x509Cert = submitReenrollmentUpdate.Invoke(csr);
-            logger.LogDebug("Certificate returned from CSR enrollment.");
+            _logger.LogDebug("Certificate returned from CSR enrollment.");
 
             // submit certificate info to deployment
             // build PEM content
@@ -177,12 +214,12 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
 
             certContent = certContent.Replace("\r", "");
 
-            logger.LogTrace("Posting certificate to Akamai.");
+            _logger.LogTrace("Posting certificate to Akamai.");
             client.PostCertificate(enrollmentId, changeId, certContent, keyType);
-            logger.LogInformation($"Certificate uploaded for enrollment - {enrollmentId}");
+            _logger.LogInformation($"Certificate uploaded for enrollment - {enrollmentId}");
 
             // akcnowledge warnings to force deployment
-            logger.LogTrace("Acknowledging warnings for finished enrollment.");
+            _logger.LogTrace("Acknowledging warnings for finished enrollment.");
             retryCount = 0;
             bool ack = false;
             while (!ack && retryCount < 4)
@@ -195,12 +232,12 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                 catch (AkamaiClientException e) when (e.ClientErrorCode == System.Net.HttpStatusCode.NotFound)
                 {
                     // wait 30 seconds before checking for warnings again
-                    logger.LogTrace("Akamai deployment warnings are not processed yet. Sleeping process to try again.");
+                    _logger.LogTrace("Akamai deployment warnings are not processed yet. Sleeping process to try again.");
                     retryCount++;
                     System.Threading.Thread.Sleep(TimeSpan.FromSeconds(20));
                 }
             }
-            logger.LogDebug($"Warnings acknowleged for enrollment - {enrollmentId}");
+            _logger.LogDebug($"Warnings acknowleged for enrollment - {enrollmentId}");
 
             JobResult result = new JobResult()
             {
@@ -208,6 +245,18 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                 Result = Orchestrators.Common.Enums.OrchestratorJobStatusJobResult.Success
             };
             return result;
+        }
+
+        private string GetRequiredValue(Dictionary<string, object> dict, string key)
+        {
+            if (!dict.ContainsKey(key)
+                || string.IsNullOrWhiteSpace(dict[key].ToString()))
+            {
+                string error = $"Requried field {key} was missing a value in the Reenrollment job properties.";
+                _logger.LogError(error);
+                throw new ArgumentException(error);
+            }
+            return dict[key].ToString();
         }
     }
 }

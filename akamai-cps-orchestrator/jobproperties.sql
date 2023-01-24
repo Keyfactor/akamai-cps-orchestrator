@@ -12,7 +12,7 @@ insert into [cms_agents].[CertStoreTypeEntryParameters]([StoreTypeId], [Name], [
 values
 	(@id, 'EnrollmentId', 'Enrollment ID', 0, 0),
 	(@id, 'ContractId', 'Contract ID', 0, 8),
-	(@id, 'Sans', 'SANs', 0, 0),
+	(@id, 'Sans', 'SANs', 0, 8),
 	(@id, 'admin-addressLineOne', 'Admin - Address Line 1', 0, 8),
 	(@id, 'admin-addressLineTwo', 'Admin - Address Line 2', 0, 0),
 	(@id, 'admin-city', 'Admin - City', 0, 8), 
