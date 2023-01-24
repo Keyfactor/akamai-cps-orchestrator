@@ -1,4 +1,18 @@
-﻿using Keyfactor.Orchestrators.Extensions;
+﻿// Copyright 2023 Keyfactor
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//     http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using Keyfactor.Orchestrators.Extensions;
 using Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models;
 using System;
 using System.Collections.Generic;
@@ -109,7 +123,16 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             {
                 enrollmentId = existingEnrollmentId.ToString();
                 _logger.LogDebug($"Looking for existing enrollment - {enrollmentId}");
-                Enrollment existingEnrollment = client.GetEnrollment(enrollmentId); // TODO: detect when enrollment with this id does not actually exist
+                Enrollment existingEnrollment;
+                try
+                {
+                    existingEnrollment = client.GetEnrollment(enrollmentId);
+                }
+                catch
+                {
+                    _logger.LogError($"Failed to find existing enrollment - {enrollmentId}");
+                    throw;
+                }
 
                 // use existing enrollment information, with reenrollment CSR data
                 existingEnrollment.csr = reenrollment.csr;
@@ -121,7 +144,20 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             else
             {
                 // no existing enrollment, create a new one
-                enrollment = client.CreateEnrollment(reenrollment, contractId); // TODO: handle 409 when CN already exists
+                try
+                {
+                    enrollment = client.CreateEnrollment(reenrollment, contractId);
+                }
+                catch (AkamaiClientException e) when (e.ClientErrorCode == System.Net.HttpStatusCode.Conflict)
+                {
+                    _logger.LogError($"Enrollment already exists for CN {reenrollment.csr.cn}, cannot create new enrollment.");
+                    throw;
+                }
+                catch
+                {
+                    _logger.LogError($"Failed to create new enrollment");
+                    throw;
+                }
                 enrollmentId = enrollment.enrollment.Split('/')[^1]; // last element of the location url is the Enrollment Id
                 _logger.LogInformation($"Created new enrollment - {enrollmentId}");
             }
