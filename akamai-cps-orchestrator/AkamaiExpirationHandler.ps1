@@ -6,10 +6,9 @@
 # // and limitations under the License.
 
 [hashtable]$context
-$Thumb = $context["thumb"]
+$Thumb = $context["Thumbprint"]
 $CA = $context["CAConfiguration"]
 $Template = $context["Template"]
-$CertLocations = $context["locations"]
 
 # script variables
 #############################################################
