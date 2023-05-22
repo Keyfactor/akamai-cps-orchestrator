@@ -69,3 +69,23 @@ Adding new certificates to Akamai requires generating a key in Akamai CPS via th
 
 Change any default values as needed, and enter an Enrollment ID if an existing enrollment needs to be updated instead of creating a new Enrollment. This is different from the Slot ID - the Enrollment ID is found by clicking on an Active certificate in Akamai CPS, and looking at the `ID` value.
 The SAN entry needs to be filled out with the DNS value you are using for the certificate's CN. If there are multiple DNS SANs, they should be separted with an ampersand. Example: `www.example01.com&www.example02.com`
+
+
+**6. (Optional) Configure Renewal of Certificates using Expriation Alert Handler
+
+Renewing existing certificates in Akamai requires running a Reenrollment Job with the same Enrollment ID that was used for an existing Certificate Enrollment. This can be done manually through the Reenrollment process, but an automated process can also be configured using a Keyfactor Expiration Alert Handler.
+
+The Expiration Alert Handler should be configured to target a Keyfactor Collection of certificates that includes the Akamai certificates that need to be renewed. This can be done with a query targeting the `CertStoreFQDN` containing `Akamai` and can be further restricted with the `CertStorePath` being equal to `Production` or `Staging`.
+
+With the Expiration Alert Handler using the correct Collection, the Alert should be set to use the `ExpirationPowershell` Handler. A [sample Powershell Handler script](./akamai-cps-orchestrator/AkamaiExpirationHandler.ps1) is included in this repository. The sample script needs to be updated with the correct URL for API requests, and may need other changes as well, as it assumes that Default Credentials (Windows Auth) can be used to authenticate API requests to the Keyfactor instance. __This script needs to be placed in the Keyfactor Command installation's configured Extension Handler Path (default: {installation_dir}\ExtensionLibrary) location so that it can be run.__
+
+The `ExpirationPowershell` Event Handler configuration should be configured with the following values:
+
+| Parameter Name | Type | Value |
+| - | - | - |
+| thumb | Special Text | Thumbprint |
+| Template | Renewal Template | `desired renewal template` |
+| CAConfiguration | Renewal Certificate Authority | `desired renewal CA` |
+| ScriptName | PowerShell Script Name | AkamaiExpirationHandler.ps1 |
+
+When running the sample script, it will assume that all certs passed to the script should schedule a Reenrollment job with their existing parameters in Akamai.

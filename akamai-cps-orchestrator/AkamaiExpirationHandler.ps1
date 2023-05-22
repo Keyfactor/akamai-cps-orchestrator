@@ -13,7 +13,7 @@ $CertLocations = $context["locations"]
 
 # script variables
 #############################################################
-$apiUrl = "https://dev.dukog.gcc/KeyfactorAPI" # update to be Keyfactor API endpoint
+$apiUrl = "https://my.keyfactor.instance01/KeyfactorAPI" # update to be Keyfactor API endpoint
 $LogDest = "C:\Keyfactor\logs\AkamaiExpirationHandler.log" # the location for the error log file, the script will create this file
 #############################################################
 
