@@ -22,7 +22,7 @@ Function LogWrite($LogString)
     Add-Content $LogDest -value $LogString
 }
 
-Function GetId
+Function GetIdAndSans
 {
     try
     {
@@ -34,7 +34,24 @@ Function GetId
         -UseDefaultCredentials `
         -ContentType "application/json"
 
-        Return $certificateResponse.Id
+        $certValues = @{}
+
+        $certValues.Id = $certificateResponse.Id
+        $certValues.Sans = ""
+
+        foreach($san in $certificateResponse.SubjectAltNameElements)
+        {
+            if ($san.Type -eq 2) #include only dns sans (type 2)
+            {
+                if ($cert.Sans)
+                {
+                    $certValues.Sans = $certValues.Sans + "&" # add ampersand delimiter for additional DNS SANs
+                }
+                $certValues.Sans = $certValues.Sans + $san.Value
+            }
+        }
+
+        return $certValues
     }
     catch
     {
@@ -55,13 +72,40 @@ Function GetLocations($certId)
         -UseDefaultCredentials `
         -ContentType "application/json"
 
-        return $locationsResponse
+        foreach($storetype in $locationsResponse.Details)
+        {
+            if ($storetype.StoreType -match "Akamai")
+            {
+                return $storetype.Locations # array of all akamai locations this cert is in
+            }
+        }
     }
     catch
     {
         LogWrite "An error occurred looking up the certificate locations in Keyfactor"
         LogWrite $_
         return "LOCATIONS_ERROR"
+    }
+}
+
+Function GetOrchestratorId($storeId)
+{
+    try
+    {
+        $storeURL = $apiUrl + "/certificatestores/" + $storeId
+        $storeResponse = Invoke-RestMethod `
+        -Method Get `
+        -Uri $storeURL `
+        -UseDefaultCredentials `
+        -ContentType "application/json"
+
+        return $storeResponse.AgentId
+    }
+    catch
+    {
+        LogWrite "An error occurred while retrieving the Orchestrator ID of the store with id: " + $storeId
+        LogWrite $_
+        return "GET_ORCHESTRATORID_ERROR"
     }
 }
 
@@ -86,12 +130,28 @@ Function GetStoreInventory($storeId)
     }
 }
 
-Function FindInventoryParameters($storeInventoryList, $certId)
+Function FindInventoryParameters($inventoryList)
 {
     try
     {
-        # TODO: search through the list for matching cert
-        return $storeInventoryList[0].Parameters
+        $parsedResults = @{}
+        # search through the store inventory list for matching cert
+        foreach($inventoryItem in $inventoryList)
+        {
+            if ($inventoryItem.Name -eq $Thumb)
+            {
+                # get cert subject
+                foreach ($cert in $inventoryItem.Certificates)
+                {
+                    if ($cert.Id -eq $CertId)
+                    {
+                        $parsedResults.Subject = $cert.IssuedDN
+                    }
+                }
+                $parsedResults.Parameters = $inventoryItem.Parameters
+                return $parsedResults
+            }
+        }
     }
     catch
     {
@@ -101,29 +161,51 @@ Function FindInventoryParameters($storeInventoryList, $certId)
     }
 }
 
-Function ScheduleReenrollment($storeInventoryItem)
+Function ScheduleReenrollment($storeId, $orchId, $inventoryList, $sans)
 {
     try
-    {
+    {        
+        # parse inventory parameters for reenrollment, and get subject
+        $reenrollmentParameters = FindInventoryParameters($inventoryList)
+        LogWrite "Parsed Subject: " 
+        $Subject = $reenrollmentParameters.Subject
+        LogWrite $Subject
+        LogWrite "Parsed Inventory Parameters"
+        $Parameters = $reenrollmentParameters.Parameters
+
+        # add sans, which are not returned on inventory
+        $Parameters.Sans = $sans
+        LogWrite $Parameters
+
+        # escape backslashes in CA name
+        $escapedCA = $CA -replace '\\', '\\'
+
+        # convert Parameters object to Json
+        $paramsJSON = $Parameters | ConvertTo-Json
+
+        # get Orchestrator Agent Id for scheduling reenrollment
+
         $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
         $headers.Add('content-type', 'application/json')
         $headers.Add("X-Keyfactor-Requested-With", "APIClient")
         $body = @"
 {
-  "KeystoreId": $storeId,
-  "SubjectName": $subject,
-  "AgentGuid": $storeOrchId,
-  "Alias": $alias,
-  "JobProperties": $storeInventoryItem,
-  "CertificateAuthority": $CA,
-  "CertificateTemplate": $Template
+  "KeystoreId": "$storeId",
+  "SubjectName": "$Subject",
+  "AgentGuid": "$orchId",
+  "Alias": "$Thumb",
+  "JobProperties": $paramsJson,
+  "CertificateAuthority": "$escapedCA",
+  "CertificateTemplate": "$Template"
 }
 "@
+        LogWrite $body
         $reenrollmentURL = $apiUrl + "/certificatestores/reenrollment"
         $reenrollmentResponse = Invoke-RestMethod `
         -Method Post `
-        -Uri $reenrollmentUrl `
+        -Uri $reenrollmentURL `
         -Headers $headers `
+        -UseDefaultCredentials `
         -Body $body `
         -ContentType "application/json"
 
@@ -154,17 +236,36 @@ catch
 
 try
 {
-    # get CertID
-    $CertID = GetId
-    LogWrite $CertId        
+    # get CertID and Sans
+    $CertValues = GetIdAndSans
+    $CertId = $CertValues.Id
+    $CertSans = $CertValues.Sans
+
+    LogWrite $CertId
+    LogWrite $CertSans
+
+            
     # get cert locations
-    $Locs = GetLocations($CertId)
-    # get inventory of locations
-    $InventoryList = GetStoreInventory($Locs.storeId)
-    # parse inventory parameters for reenrollment
-    $InventoryItemParameters = FindInventoryParameters($InventoryList, $CertId)
-    # schedule reenrollment with parameters
-    ScheduleReenrollment($InventoryItemParameters)
+    $Locations = GetLocations($CertId)
+    LogWrite "Retrieved Locations"
+
+    # process for each store location this cert is in
+    foreach($Location in $Locations)
+    {
+        $StoreId = $Location.StoreId
+
+        # get Orchestrator Id for store
+        $OrchestratorId = GetOrchestratorId $StoreId
+
+        # get inventory of location
+        $InventoryList = GetStoreInventory $StoreId
+        LogWrite "Got Store Inventory Parameters"
+        LogWrite $InventoryList
+
+        # schedule reenrollment with parameters
+        ScheduleReenrollment $StoreId $OrchestratorId $InventoryList $CertSans
+        LogWrite "Scheduled Reenrollment"
+    }
 }
 catch
 {
