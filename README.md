@@ -112,9 +112,11 @@ Change any default values as needed, and enter an Enrollment ID if an existing e
 The SAN entry needs to be filled out with the DNS value you are using for the certificate's CN. If there are multiple DNS SANs, they should be separted with an ampersand. Example: `www.example01.com&www.example02.com`
 
 
-**6. (Optional) Configure Renewal of Certificates using Expriation Alert Handler
+**6. (Optional) Configure Renewal of Certificates using Expiration Alert Handler**
 
-Renewing existing certificates in Akamai requires running a Reenrollment Job with the same Enrollment ID that was used for an existing Certificate Enrollment. This can be done manually through the Reenrollment process, but an automated process can also be configured using a Keyfactor Expiration Alert Handler.
+Akamai does not support traditional certificate Renewal or one-click Renewal done in the Keyfactor Command platform. The Renewal process creates Certificates with outside keys which are not allowed to be imported into Akamai CPS. As a result, the Reenrollment Job must be used in order to renew existing certificates that reside on the Akamai system. Reenrollment is required as opposed to the Renewal process as it allows Akamai to generate the keys on their platform, which are used to create a certificate in Keyfactor.
+
+Renewing existing certificates in Akamai means running a Reenrollment Job with the same Enrollment ID that was used for an existing Certificate Enrollment. This can be done manually through the Reenrollment process, but an automated process can also be configured using a Keyfactor Expiration Alert Handler.
 
 The Expiration Alert Handler should be configured to target a Keyfactor Collection of certificates that includes the Akamai certificates that need to be renewed. This can be done with a query targeting the `CertStoreFQDN` containing `Akamai` and can be further restricted with the `CertStorePath` being equal to `Production` or `Staging`.
 
@@ -124,7 +126,7 @@ The `ExpirationPowershell` Event Handler configuration should be configured with
 
 | Parameter Name | Type | Value |
 | - | - | - |
-| thumb | Special Text | Thumbprint |
+| Thumbprint | Special Text | Thumbprint |
 | Template | Renewal Template | `desired renewal template` |
 | CAConfiguration | Renewal Certificate Authority | `desired renewal CA` |
 | ScriptName | PowerShell Script Name | AkamaiExpirationHandler.ps1 |
