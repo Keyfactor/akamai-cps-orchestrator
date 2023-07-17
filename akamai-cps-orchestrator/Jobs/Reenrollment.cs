@@ -47,12 +47,18 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             string contractId = GetRequiredValue(allJobProps, "ContractId");
             string sans = GetRequiredValue(allJobProps, "Sans"); // ampersand split sans
 
+            _logger.LogDebug($"Reading passed in reenrollment subject: {subject}");
             string[] subjectParams = subject.Split(',');
             var subjectValues = new Dictionary<string, string>();
             foreach (var subjectParam in subjectParams)
             {
                 string[] subjectPair = subjectParam.Split('=', 2);
-                subjectValues.Add(subjectPair[0].ToUpper(), subjectPair[1]);
+                bool subjectParsedSuccessfully = subjectValues.TryAdd(subjectPair[0].ToUpper(), subjectPair[1]);
+
+                if (!subjectParsedSuccessfully)
+                {
+                    _logger.LogInformation($"Subject element '{subjectPair[0]}' with value '{subjectPair[1]}' was not included in the Reenrollment subject sent to Akamai.");
+                }
             }
 
             var reenrollment = new Enrollment()
