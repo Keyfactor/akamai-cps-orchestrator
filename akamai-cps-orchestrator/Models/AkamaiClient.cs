@@ -114,6 +114,20 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             return JsonConvert.DeserializeObject<Enrollment>(json);
         }
 
+        public ChangeHistory GetEnrollmentChangeHistory(string enrollmentId)
+        {
+            var path = $"{Constants.Endpoints.Enrollments}/{enrollmentId}/history/changes";
+            var acceptHeader = "application/vnd.akamai.cps.change-history.v5+json";
+
+            _http.DefaultRequestHeaders.Clear();
+            _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
+            PrepareAuth("GET", path, $"Accept:{acceptHeader}");
+
+            var response = _http.GetAsync(path).Result;
+            string json = ReadHttpResponse(response);
+            return JsonConvert.DeserializeObject<ChangeHistory>(json);
+        }
+
         public CreatedEnrollment CreateEnrollment(Enrollment newEnrollment, string contractId)
         {
             // enable change management if it is a staging enrollment
@@ -173,6 +187,20 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             PendingCSR csr = change.csrs.Where(csr => string.Equals(csr.keyAlgorithm, keyType, StringComparison.CurrentCultureIgnoreCase)).SingleOrDefault();
 
             return csr.csr;
+        }
+
+        public void DeletePendingChange(string enrollmentId, string changeId)
+        {
+            var path = string.Format(Constants.Endpoints.Changes, enrollmentId) + $"/{changeId}";
+            var acceptHeader = "application/vnd.akamai.cps.change-id.v1+json";
+
+            _http.DefaultRequestHeaders.Clear();
+            _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
+            PrepareAuth("DELETE", path, $"Accept:{acceptHeader}");
+
+            var response = _http.DeleteAsync(path).Result;
+            string json = ReadHttpResponse(response);
+            return;
         }
 
         public void PostCertificate(string enrollmentId, string changeId, string certificate, string keyAlgorithm, string trustChain = null)

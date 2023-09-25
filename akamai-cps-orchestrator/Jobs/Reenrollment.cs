@@ -20,6 +20,7 @@ using System.Text;
 using Newtonsoft.Json;
 using Microsoft.Extensions.Logging;
 using Keyfactor.Logging;
+using System.Linq;
 
 namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
 {
@@ -144,8 +145,25 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                 existingEnrollment.csr = reenrollment.csr;
 
                 _logger.LogDebug($"Found existing enrollment - {enrollmentId}");
-                enrollment = client.UpdateEnrollment(enrollmentId, existingEnrollment);
-                _logger.LogInformation($"Updated existing enrollment - {enrollmentId}");
+                try
+                {
+                    enrollment = client.UpdateEnrollment(enrollmentId, existingEnrollment);
+                    _logger.LogInformation($"Updated existing enrollment - {enrollmentId}");
+                }
+                catch (AkamaiClientException e) when (e.ClientErrorCode == System.Net.HttpStatusCode.InternalServerError)
+                {
+                    // 500 error thrown when trying to "update" existing enrollment that is in deployment process
+                    _logger.LogError($"Failed to update existing enrollment - {enrollmentId}");
+                    _logger.LogInformation($"Attempting to rollback existing change to restart enrollment");
+                    var mostRecentChangeLocation = existingEnrollment.pendingChanges.Last().location;
+                    var mostRecentChangeId = mostRecentChangeLocation.Split('/')[^1]; // last element of the location url is the Change Id
+                    // delete change and try to update enrollment again
+                    _logger.LogDebug($"Deleting pending change {mostRecentChangeId}");
+                    client.DeletePendingChange(enrollmentId, mostRecentChangeId);
+                    _logger.LogInformation($"Deleted pending change, attempting to update enrollment again");
+                    enrollment = client.UpdateEnrollment(enrollmentId, existingEnrollment);
+                    _logger.LogInformation($"Updated existing enrollment - {enrollmentId}");
+                }
             }
             else
             {
