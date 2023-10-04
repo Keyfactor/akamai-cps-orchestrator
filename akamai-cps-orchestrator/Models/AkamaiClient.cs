@@ -13,9 +13,11 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using Keyfactor.Extensions.Utilities.HttpInterface;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
@@ -24,7 +26,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
     public class AkamaiClient
     {
         private ILogger _logger;
-        private HttpClient _http;
+        private HttpInterface _http;
         private AkamaiAuth _auth;
         private JsonSerializerSettings _serializerSettings = new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore };
 
@@ -40,8 +42,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             Hostname = clientMachine;
 
             _auth = auth;
-            _http = new HttpClient();
-            _http.BaseAddress = new Uri($"https://{Hostname}/");
+            _http = new HttpInterface(_logger, Hostname, useSSL: true);
         }
 
         public void SetDeploymentType(string storePath)
@@ -65,13 +66,13 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             var path = string.Format(Constants.Endpoints.Deployments, enrollmentId);
             var acceptHeader = "application/vnd.akamai.cps.deployments.v7+json";
 
-            _http.DefaultRequestHeaders.Clear();
-            _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
-            PrepareAuth("GET", path);
+            _http.SetRequestHeaders(new Dictionary<string, string>()
+            {
+                {"Accept", acceptHeader}
+            });
+            _http.AddAuthHeader(_auth.GenerateAuthHeader("GET", Hostname, path));
 
-            var response = _http.GetAsync(path).Result;
-            string json = ReadHttpResponse(response);
-            Deployment deployment = JsonConvert.DeserializeObject<Deployment>(json);
+            Deployment deployment = _http.Get<Deployment>(path);
 
             // deployments are returned for in process enrollments, so null coalesce to filter for fully deployed certs
             if (IsProduction)
@@ -91,13 +92,14 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             var path = Constants.Endpoints.Enrollments;
             var acceptHeader = "application/vnd.akamai.cps.enrollments.v11+json";
 
-            _http.DefaultRequestHeaders.Clear();
-            _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
-            PrepareAuth("GET", path);
+            _http.SetRequestHeaders(new Dictionary<string, string>()
+            {
+                {"Accept", acceptHeader}
+            });
+            _http.AddAuthHeader(_auth.GenerateAuthHeader("GET", Hostname, path));
 
-            var response = _http.GetAsync(path).Result;
-            string json = ReadHttpResponse(response);
-            return JsonConvert.DeserializeObject<Enrollments>(json).enrollments;
+            Enrollments enrollmentList = _http.Get<Enrollments>(path);
+            return enrollmentList.enrollments;
         }
 
         public Enrollment GetEnrollment(string enrollmentId)
@@ -105,13 +107,13 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             var path = $"{Constants.Endpoints.Enrollments}/{enrollmentId}";
             var acceptHeader = "application/vnd.akamai.cps.enrollment.v11+json";
 
-            _http.DefaultRequestHeaders.Clear();
-            _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
-            PrepareAuth("GET", path);
+            _http.SetRequestHeaders(new Dictionary<string, string>()
+            {
+                {"Accept", acceptHeader}
+            });
+            _http.AddAuthHeader(_auth.GenerateAuthHeader("GET", Hostname, path));
 
-            var response = _http.GetAsync(path).Result;
-            string json = ReadHttpResponse(response);
-            return JsonConvert.DeserializeObject<Enrollment>(json);
+            return _http.Get<Enrollment>(path);
         }
 
         public ChangeHistory GetEnrollmentChangeHistory(string enrollmentId)
@@ -119,13 +121,13 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             var path = $"{Constants.Endpoints.Enrollments}/{enrollmentId}/history/changes";
             var acceptHeader = "application/vnd.akamai.cps.change-history.v5+json";
 
-            _http.DefaultRequestHeaders.Clear();
-            _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
-            PrepareAuth("GET", path);
+            _http.SetRequestHeaders(new Dictionary<string, string>()
+            {
+                {"Accept", acceptHeader}
+            });
+            _http.AddAuthHeader(_auth.GenerateAuthHeader("GET", Hostname, path));
 
-            var response = _http.GetAsync(path).Result;
-            string json = ReadHttpResponse(response);
-            return JsonConvert.DeserializeObject<ChangeHistory>(json);
+            return _http.Get<ChangeHistory>(path);
         }
 
         public CreatedEnrollment CreateEnrollment(Enrollment newEnrollment, string contractId)
@@ -139,15 +141,14 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             var acceptHeader = "application/vnd.akamai.cps.enrollment-status.v1+json";
             var contentHeader = "application/vnd.akamai.cps.enrollment.v11+json";
 
-            _http.DefaultRequestHeaders.Clear();
-            _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
+            _http.SetRequestHeaders(new Dictionary<string, string>()
+            {
+                {"Accept", acceptHeader}
+            });
+            _http.AddAuthHeader(_auth.GenerateAuthHeader("POST", Hostname, path, body));
             requestContent.Headers.ContentType = new MediaTypeHeaderValue(contentHeader);
-            PrepareAuth("POST", path, body);
 
-            var response = _http.PostAsync(path, requestContent).Result;
-            string json = ReadHttpResponse(response);
-            CreatedEnrollment enrollment = JsonConvert.DeserializeObject<CreatedEnrollment>(json);
-            return enrollment;
+            return _http.Post<CreatedEnrollment>(path, requestContent);
         }
 
         public CreatedEnrollment UpdateEnrollment(string enrollmentId, Enrollment enrollment)
@@ -158,15 +159,14 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             var acceptHeader = "application/vnd.akamai.cps.enrollment-status.v1+json";
             var contentHeader = "application/vnd.akamai.cps.enrollment.v11+json";
 
-            _http.DefaultRequestHeaders.Clear();
-            _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
+            _http.SetRequestHeaders(new Dictionary<string, string>()
+            {
+                {"Accept", acceptHeader}
+            });
+            _http.AddAuthHeader(_auth.GenerateAuthHeader("PUT", Hostname, path));
             requestContent.Headers.ContentType = new MediaTypeHeaderValue(contentHeader);
-            PrepareAuth("PUT", path); // dont sign PUT body
 
-            var response = _http.PutAsync(path, requestContent).Result;
-            string json = ReadHttpResponse(response);
-            CreatedEnrollment updatedEnrollment = JsonConvert.DeserializeObject<CreatedEnrollment>(json);
-            return updatedEnrollment;
+            return _http.Put<CreatedEnrollment>(path, requestContent);
         }
 
         public string GetCSR(string enrollmentId, string changeId, string keyType)
@@ -175,13 +175,13 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             var path = string.Format(Constants.Endpoints.GetChange, enrollmentId, changeId);
             var acceptHeader = "application/vnd.akamai.cps.csr.v2+json";
 
-            _http.DefaultRequestHeaders.Clear();
-            _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
-            PrepareAuth("GET", path);
+            _http.SetRequestHeaders(new Dictionary<string, string>()
+            {
+                {"Accept", acceptHeader}
+            });
+            _http.AddAuthHeader(_auth.GenerateAuthHeader("GET", Hostname, path));
 
-            var response = _http.GetAsync(path).Result;
-            string json = ReadHttpResponse(response);
-            PendingChange change = JsonConvert.DeserializeObject<PendingChange>(json);
+            PendingChange change = _http.Get<PendingChange>(path);
 
             // get CSR for correct key type of reenrollment template
             PendingCSR csr = change.csrs.Where(csr => string.Equals(csr.keyAlgorithm, keyType, StringComparison.CurrentCultureIgnoreCase)).SingleOrDefault();
@@ -194,12 +194,13 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             var path = string.Format(Constants.Endpoints.Changes, enrollmentId) + $"/{changeId}";
             var acceptHeader = "application/vnd.akamai.cps.change-id.v1+json";
 
-            _http.DefaultRequestHeaders.Clear();
-            _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
-            PrepareAuth("DELETE", path);
+            _http.SetRequestHeaders(new Dictionary<string, string>()
+            {
+                {"Accept", acceptHeader}
+            });
+            _http.AddAuthHeader(_auth.GenerateAuthHeader("DELETE", Hostname, path));
 
-            var response = _http.DeleteAsync(path).Result;
-            string json = ReadHttpResponse(response);
+            var response = _http.DeleteRaw(path);
             return;
         }
 
@@ -223,13 +224,14 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             var acceptHeader = "application/vnd.akamai.cps.change-id.v1+json";
             var contentHeader = "application/vnd.akamai.cps.certificate-and-trust-chain.v2+json";
 
-            _http.DefaultRequestHeaders.Clear();
-            _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
+            _http.SetRequestHeaders(new Dictionary<string, string>()
+            {
+                {"Accept", acceptHeader}
+            });
+            _http.AddAuthHeader(_auth.GenerateAuthHeader("POST", Hostname, path, body));
             requestContent.Headers.ContentType = new MediaTypeHeaderValue(contentHeader);
-            PrepareAuth("POST", path, body);
 
-            var response = _http.PostAsync(path, requestContent).Result;
-            string json = ReadHttpResponse(response);
+            var response = _http.PostRaw(path, requestContent);
             return;
         }
 
@@ -239,13 +241,14 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             var acceptHeader = "application/vnd.akamai.cps.change-id.v1+json";
             var contentHeader = "application/vnd.akamai.cps.deployment-schedule.v1+json";
 
-            _http.DefaultRequestHeaders.Clear();
-            _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
-            _http.DefaultRequestHeaders.Add("Content-Type", contentHeader);
-            PrepareAuth("PUT", path);
+            _http.SetRequestHeaders(new Dictionary<string, string>()
+            {
+                {"Accept", acceptHeader},
+                {"Content-Type", contentHeader}
+            });
+            _http.AddAuthHeader(_auth.GenerateAuthHeader("PUT", Hostname, path));
 
-            var response = _http.GetAsync(path).Result;
-            string json = ReadHttpResponse(response);
+            var response = _http.GetRaw(path);
             return;
         }
 
@@ -258,13 +261,14 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             var acceptHeader = "application/vnd.akamai.cps.change-id.v1+json";
             var contentHeader = "application/vnd.akamai.cps.acknowledgement.v1+json";
 
-            _http.DefaultRequestHeaders.Clear();
-            _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
+            _http.SetRequestHeaders(new Dictionary<string, string>()
+            {
+                {"Accept", acceptHeader}
+            });
+            _http.AddAuthHeader(_auth.GenerateAuthHeader("POST", Hostname, path, body));
             requestContent.Headers.ContentType = new MediaTypeHeaderValue(contentHeader);
-            PrepareAuth("POST", path, body);
 
-            var response = _http.PostAsync(path, requestContent).Result;
-            string json = ReadHttpResponse(response);
+            var response = _http.PostRaw(path, requestContent);
             return;
         }
 
@@ -280,12 +284,6 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
                 // log Akamai error reason from response
                 throw new AkamaiClientException(responseMessage, response.StatusCode);
             }
-        }
-
-        private void PrepareAuth(string method, string path, string requestBody = null)
-        {
-            var authHeader = _auth.GenerateAuthHeader(method, Hostname, path, requestBody);
-            _http.DefaultRequestHeaders.Authorization = authHeader;
         }
     }
 }

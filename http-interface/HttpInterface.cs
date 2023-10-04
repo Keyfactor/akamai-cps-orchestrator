@@ -48,6 +48,11 @@ namespace Keyfactor.Extensions.Utilities.HttpInterface
     
         }
 
+        public void AddAuthHeader(AuthenticationHeaderValue authHeader)
+        {
+            _http.DefaultRequestHeaders.Authorization = authHeader;
+        }
+
         public T Get<T>(string path)
         {
             string json = GetRaw(path);
@@ -139,6 +144,38 @@ namespace Keyfactor.Extensions.Utilities.HttpInterface
             {
                 // TODO: check other specific errors, timeout / cancellation
                 _logger.LogError($"Unexpected error that was not a PUT response to {_http.BaseAddress}/{path}");
+                _logger.LogTrace("Returning exception for caller to handle.");
+                throw;
+            }
+        }
+
+        public T Delete<T>(string path)
+        {
+            string json = DeleteRaw(path);
+            _logger.LogTrace($"Received DELETE response. Deserializing into type {typeof(T)}");
+            return JsonConvert.DeserializeObject<T>(json);
+        }
+
+        public string DeleteRaw(string path)
+        {
+            try
+            {
+                _logger.LogDebug($"Performing DELETE request to {_http.BaseAddress}/{path}");
+                var response = _http.DeleteAsync(path).Result;
+                _logger.LogTrace($"Completed DELETE request. Reading response");
+                return ReadHttpResponse(response);
+            }
+            catch (HttpInterfaceException e)
+            {
+                _logger.LogError($"Error in DELETE response from {e.RequestUri}");
+                _logger.LogError($"Code: {e.ErrorCode} - ReasonPhrase: {e.Reason}");
+                _logger.LogTrace("Returning exception for caller to handle.");
+                throw;
+            }
+            catch
+            {
+                // TODO: check other specific errors, timeout / cancellation
+                _logger.LogError($"Unexpected error that was not a DELETE response to {_http.BaseAddress}/{path}");
                 _logger.LogTrace("Returning exception for caller to handle.");
                 throw;
             }
