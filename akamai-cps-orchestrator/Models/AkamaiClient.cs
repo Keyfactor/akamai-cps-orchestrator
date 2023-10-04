@@ -56,7 +56,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             }
             else
             {
-                // invalid input
+                throw new ArgumentException($"Store path {storePath} did not match either '{Constants.StorePaths.Production}' or '{Constants.StorePaths.Staging}'");
             }
         }
 
@@ -67,7 +67,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
 
             _http.DefaultRequestHeaders.Clear();
             _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
-            PrepareAuth("GET", path, $"Accept:{acceptHeader}");
+            PrepareAuth("GET", path);
 
             var response = _http.GetAsync(path).Result;
             string json = ReadHttpResponse(response);
@@ -93,7 +93,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
 
             _http.DefaultRequestHeaders.Clear();
             _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
-            PrepareAuth("GET", path, $"Accept:{acceptHeader}");
+            PrepareAuth("GET", path);
 
             var response = _http.GetAsync(path).Result;
             string json = ReadHttpResponse(response);
@@ -107,7 +107,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
 
             _http.DefaultRequestHeaders.Clear();
             _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
-            PrepareAuth("GET", path, $"Accept:{acceptHeader}");
+            PrepareAuth("GET", path);
 
             var response = _http.GetAsync(path).Result;
             string json = ReadHttpResponse(response);
@@ -121,7 +121,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
 
             _http.DefaultRequestHeaders.Clear();
             _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
-            PrepareAuth("GET", path, $"Accept:{acceptHeader}");
+            PrepareAuth("GET", path);
 
             var response = _http.GetAsync(path).Result;
             string json = ReadHttpResponse(response);
@@ -142,7 +142,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             _http.DefaultRequestHeaders.Clear();
             _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
             requestContent.Headers.ContentType = new MediaTypeHeaderValue(contentHeader);
-            PrepareAuth("POST", path, $"Accept:{acceptHeader}\tContent-Type:{contentHeader}", body);
+            PrepareAuth("POST", path, body);
 
             var response = _http.PostAsync(path, requestContent).Result;
             string json = ReadHttpResponse(response);
@@ -161,7 +161,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             _http.DefaultRequestHeaders.Clear();
             _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
             requestContent.Headers.ContentType = new MediaTypeHeaderValue(contentHeader);
-            PrepareAuth("PUT", path, $"Accept:{acceptHeader}\tContent-Type:{contentHeader}"); // dont sign PUT body
+            PrepareAuth("PUT", path); // dont sign PUT body
 
             var response = _http.PutAsync(path, requestContent).Result;
             string json = ReadHttpResponse(response);
@@ -177,7 +177,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
 
             _http.DefaultRequestHeaders.Clear();
             _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
-            PrepareAuth("GET", path, $"Accept:{acceptHeader}");
+            PrepareAuth("GET", path);
 
             var response = _http.GetAsync(path).Result;
             string json = ReadHttpResponse(response);
@@ -196,7 +196,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
 
             _http.DefaultRequestHeaders.Clear();
             _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
-            PrepareAuth("DELETE", path, $"Accept:{acceptHeader}");
+            PrepareAuth("DELETE", path);
 
             var response = _http.DeleteAsync(path).Result;
             string json = ReadHttpResponse(response);
@@ -226,7 +226,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             _http.DefaultRequestHeaders.Clear();
             _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
             requestContent.Headers.ContentType = new MediaTypeHeaderValue(contentHeader);
-            PrepareAuth("POST", path, $"Accept:{acceptHeader}\tContent-Type:{contentHeader}", body);
+            PrepareAuth("POST", path, body);
 
             var response = _http.PostAsync(path, requestContent).Result;
             string json = ReadHttpResponse(response);
@@ -242,7 +242,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             _http.DefaultRequestHeaders.Clear();
             _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
             _http.DefaultRequestHeaders.Add("Content-Type", contentHeader);
-            PrepareAuth("PUT", path, $"Accept:{acceptHeader}\tContent-Type:{contentHeader}");
+            PrepareAuth("PUT", path);
 
             var response = _http.GetAsync(path).Result;
             string json = ReadHttpResponse(response);
@@ -261,7 +261,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             _http.DefaultRequestHeaders.Clear();
             _http.DefaultRequestHeaders.Add("Accept", acceptHeader);
             requestContent.Headers.ContentType = new MediaTypeHeaderValue(contentHeader);
-            PrepareAuth("POST", path, $"Accept:{acceptHeader}\tContent-Type:{contentHeader}", body);
+            PrepareAuth("POST", path, body);
 
             var response = _http.PostAsync(path, requestContent).Result;
             string json = ReadHttpResponse(response);
@@ -282,9 +282,9 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             }
         }
 
-        private void PrepareAuth(string method, string path, string headers, string requestBody = null)
+        private void PrepareAuth(string method, string path, string requestBody = null)
         {
-            var authHeader = _auth.GenerateAuthHeader(method, Hostname, path, headers, requestBody);
+            var authHeader = _auth.GenerateAuthHeader(method, Hostname, path, requestBody);
             _http.DefaultRequestHeaders.Authorization = authHeader;
         }
     }
