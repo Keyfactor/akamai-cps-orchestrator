@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
@@ -76,10 +77,17 @@ namespace Keyfactor.Extensions.Utilities.HttpInterface
                 _logger.LogTrace("Returning exception for caller to handle.");
                 throw;
             }
-            catch
+            catch (AggregateException e) when (e.GetBaseException() is TaskCanceledException)
+            {
+                // timeout occurred
+                _logger.LogError($"Timeout occurred for GET request to {_http.BaseAddress}/{path}");
+                throw;
+            }
+            catch (Exception e)
             {
                 // TODO: check other specific errors, timeout / cancellation
                 _logger.LogError($"Unexpected error that was not a GET response to {_http.BaseAddress}/{path}");
+                _logger.LogError($"Error info: {e.ToString()}");
                 _logger.LogTrace("Returning exception for caller to handle.");
                 throw;
             }
@@ -108,10 +116,17 @@ namespace Keyfactor.Extensions.Utilities.HttpInterface
                 _logger.LogTrace("Returning exception for caller to handle.");
                 throw;
             }
-            catch
+            catch (AggregateException e) when (e.GetBaseException() is TaskCanceledException)
+            {
+                // timeout occurred
+                _logger.LogError($"Timeout occurred for POST request to {_http.BaseAddress}/{path}");
+                throw;
+            }
+            catch (Exception e)
             {
                 // TODO: check other specific errors, timeout / cancellation
                 _logger.LogError($"Unexpected error that was not a POST response to {_http.BaseAddress}/{path}");
+                _logger.LogError($"Error info: {e.ToString()}");
                 _logger.LogTrace("Returning exception for caller to handle.");
                 throw;
             }
@@ -140,10 +155,17 @@ namespace Keyfactor.Extensions.Utilities.HttpInterface
                 _logger.LogTrace("Returning exception for caller to handle.");
                 throw;
             }
-            catch
+            catch (AggregateException e) when (e.GetBaseException() is TaskCanceledException)
+            {
+                // timeout occurred
+                _logger.LogError($"Timeout occurred for PUT request to {_http.BaseAddress}/{path}");
+                throw;
+            }
+            catch (Exception e)
             {
                 // TODO: check other specific errors, timeout / cancellation
                 _logger.LogError($"Unexpected error that was not a PUT response to {_http.BaseAddress}/{path}");
+                _logger.LogError($"Error info: {e.ToString()}");
                 _logger.LogTrace("Returning exception for caller to handle.");
                 throw;
             }
@@ -172,10 +194,17 @@ namespace Keyfactor.Extensions.Utilities.HttpInterface
                 _logger.LogTrace("Returning exception for caller to handle.");
                 throw;
             }
-            catch
+            catch (AggregateException e) when (e.GetBaseException() is TaskCanceledException)
+            {
+                // timeout occurred
+                _logger.LogError($"Timeout occurred for DELETE request to {_http.BaseAddress}/{path}");
+                throw;
+            }
+            catch (Exception e)
             {
                 // TODO: check other specific errors, timeout / cancellation
                 _logger.LogError($"Unexpected error that was not a DELETE response to {_http.BaseAddress}/{path}");
+                _logger.LogError($"Error info: {e.ToString()}");
                 _logger.LogTrace("Returning exception for caller to handle.");
                 throw;
             }
