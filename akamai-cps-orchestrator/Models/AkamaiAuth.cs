@@ -36,7 +36,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             _accessToken = jobProperties["access_token"];
         }
 
-        public AuthenticationHeaderValue GenerateAuthHeader(string requestMethod, string host, string path, string headers, string requestBody = null)
+        public AuthenticationHeaderValue GenerateAuthHeader(string requestMethod, string host, string path, string requestBody = null)
         {
             DateTime time = DateTime.UtcNow;
             string timestamp = time.ToString("yyyyMMddTHH:mm:ss+0000");
