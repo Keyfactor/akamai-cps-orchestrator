@@ -26,6 +26,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
         public bool enableMultiStackedCertificates = false;
         public NetworkConfiguration networkConfiguration = new NetworkConfiguration();
         public ContactInfo org;
+        public EnrollmentChanges[] pendingChanges; // last item is most recent
         public string ra = "third-party";
         public string signatureAlgorithm = "SHA-256";
         public ContactInfo techContact;
@@ -76,5 +77,11 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
         public string postalCode;
         public string region;
         public string title;
+    }
+
+    public class EnrollmentChanges
+    {
+        public string location;
+        public string changeType;
     }
 }
