@@ -271,19 +271,5 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             var response = _http.PostRaw(path, requestContent);
             return;
         }
-
-        private string ReadHttpResponse(HttpResponseMessage response)
-        {
-            string responseMessage = response.Content.ReadAsStringAsync().Result;
-            if (response.IsSuccessStatusCode)
-            {
-                return responseMessage;
-            }
-            else
-            {
-                // log Akamai error reason from response
-                throw new AkamaiClientException(responseMessage, response.StatusCode);
-            }
-        }
     }
 }

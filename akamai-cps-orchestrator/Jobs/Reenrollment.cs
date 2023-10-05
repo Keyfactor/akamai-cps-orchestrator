@@ -21,6 +21,7 @@ using Newtonsoft.Json;
 using Microsoft.Extensions.Logging;
 using Keyfactor.Logging;
 using System.Linq;
+using Keyfactor.Extensions.Utilities.HttpInterface;
 
 namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
 {
@@ -178,7 +179,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                     enrollment = client.UpdateEnrollment(enrollmentId, existingEnrollment);
                     logger.LogInformation($"Updated existing enrollment - {enrollmentId}");
                 }
-                catch (AkamaiClientException e) when (e.ClientErrorCode == System.Net.HttpStatusCode.InternalServerError)
+                catch (HttpInterfaceException e) when (e.ErrorCode == System.Net.HttpStatusCode.InternalServerError)
                 {
                     // 500 error thrown when trying to "update" existing enrollment that is in deployment process
                     logger.LogError($"Failed to update existing enrollment - {enrollmentId}");
@@ -218,7 +219,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                 {
                     enrollment = client.CreateEnrollment(reenrollment, contractId);
                 }
-                catch (AkamaiClientException e) when (e.ClientErrorCode == System.Net.HttpStatusCode.Conflict)
+                catch (HttpInterfaceException e) when (e.ErrorCode == System.Net.HttpStatusCode.Conflict)
                 {
                     logger.LogError($"Enrollment already exists for CN {reenrollment.csr.cn}, cannot create new enrollment.");
                     string errorMessage = FlattenException(e);
@@ -250,7 +251,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                 {
                     csr = client.GetCSR(enrollmentId, changeId, keyType);
                 }
-                catch (AkamaiClientException e) when (e.ClientErrorCode == System.Net.HttpStatusCode.NotFound)
+                catch (HttpInterfaceException e) when (e.ErrorCode == System.Net.HttpStatusCode.NotFound)
                 {
                     // wait 30 seconds before checking for processed CSR again
                     logger.LogTrace("Akamai CSR not ready yet. Sleeping process to try again.");
@@ -326,7 +327,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                     client.AcknowledgeWarnings(enrollmentId, changeId);
                     ack = true;
                 }
-                catch (AkamaiClientException e) when (e.ClientErrorCode == System.Net.HttpStatusCode.NotFound)
+                catch (HttpInterfaceException e) when (e.ErrorCode == System.Net.HttpStatusCode.NotFound)
                 {
                     // wait 30 seconds before checking for warnings again
                     logger.LogTrace("Akamai deployment warnings are not processed yet. Sleeping process to try again.");
