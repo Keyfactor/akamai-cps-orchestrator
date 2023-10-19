@@ -1,4 +1,4 @@
-﻿// Copyright 2023 Keyfactor
+// Copyright 2023 Keyfactor
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,20 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Text;
-
 namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
 {
-    public class AkamaiClientException : Exception
+    // get the CSR generated for an enrollment change
+    public class ChangeHistory
     {
-        public HttpStatusCode ClientErrorCode;
+        public Change[] changes;
+    }
 
-        public AkamaiClientException(string message, HttpStatusCode statusCode) : base(message)
-        {
-            ClientErrorCode = statusCode;
-        }
+    public class Change
+    {
+        public string action;
+        public string actionDescription;
+        public string businessCaseId;
+        public string createdBy;
+        public string createdOn;
+        public string lastUpdated;
+        public CertificateInfo[] multiStackedCertificates;
+        public CertificateInfo primaryCertificate;
+        public string ra;
+        public string status;
     }
 }

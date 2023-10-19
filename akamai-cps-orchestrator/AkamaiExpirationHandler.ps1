@@ -160,6 +160,77 @@ Function FindInventoryParameters($inventoryList)
     }
 }
 
+Function FilterSubjectForAkamai($certSubject)
+{
+    # Subject fields allowed by Akamai:
+    # CN, C, L, O, OU, ST
+    $subjectElements = $certSubject.split(',')
+
+    $parsedSubject = ""
+
+    $noCN? = $true
+    $noC? = $true
+    $noL? = $true
+    $noO? = $true
+    $noOU? = $true
+    $noST? = $true
+    foreach($ele in $subjectElements)
+    {
+        if ($noCN?)
+        {
+            if ($ele -match 'CN=')
+            {
+                $parsedSubject += $ele + ','
+                $noCN? = $false
+            }
+        }
+        if ($noC?)
+        {
+            if ($ele -match 'C=')
+            {
+                $parsedSubject += $ele + ','
+                $noC? = $false
+            }
+        }
+        if ($noL?)
+        {
+            if ($ele -match 'L=')
+            {
+                $parsedSubject += $ele + ','
+                $noL? = $false
+            }
+        }
+        if ($noO?)
+        {
+            if ($ele -match 'O=')
+            {
+                $parsedSubject += $ele + ','
+                $noO? = $false
+            }
+        }
+        if ($noOU?)
+        {
+            if ($ele -match 'OU=')
+            {
+                $parsedSubject += $ele + ','
+                $noOU? = $false
+            }
+        }
+        if ($noST?)
+        {
+            if ($ele -match 'ST=')
+            {
+                $parsedSubject += $ele + ','
+                $noST? = $false
+            }
+        }
+    }
+
+    # trim comma at end
+    $i = $parsedSubject.LastIndexOf(',')
+    return $parsedSubject.Substring(0, $i)
+}
+
 Function ScheduleReenrollment($storeId, $orchId, $inventoryList, $sans)
 {
     try
@@ -169,6 +240,9 @@ Function ScheduleReenrollment($storeId, $orchId, $inventoryList, $sans)
         LogWrite "Parsed Subject: " 
         $Subject = $reenrollmentParameters.Subject
         LogWrite $Subject
+        LogWrite "Subject filtered for Akamai Reenrollment: "
+        $FilteredSubject = FilterSubjectForAkamai($Subject)
+        LogWrite $FilteredSubject
         LogWrite "Parsed Inventory Parameters"
         $Parameters = $reenrollmentParameters.Parameters
 
@@ -190,7 +264,7 @@ Function ScheduleReenrollment($storeId, $orchId, $inventoryList, $sans)
         $body = @"
 {
   "KeystoreId": "$storeId",
-  "SubjectName": "$Subject",
+  "SubjectName": "$FilteredSubject",
   "AgentGuid": "$orchId",
   "Alias": "$Thumb",
   "JobProperties": $paramsJson,
