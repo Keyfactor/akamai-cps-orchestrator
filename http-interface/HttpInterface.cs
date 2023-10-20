@@ -52,8 +52,7 @@ namespace Keyfactor.Extensions.Utilities.HttpInterface
 
         public void SetRequestHeaders(Dictionary<string, string> headers)
         {
-            // TODO: set on httpHandler per request instead of defaults for whole client
-            // TODO: log headers set without exposing Auth header / sensitive information
+            // TODO: set on httpHandler per request instead of defaults for whole client each time
             _http.DefaultRequestHeaders.Clear();
             foreach (var key in headers.Keys)
             {
@@ -99,7 +98,6 @@ namespace Keyfactor.Extensions.Utilities.HttpInterface
             }
             catch (Exception e)
             {
-                // TODO: check other specific errors, timeout / cancellation
                 _logger.LogError($"Unexpected error that was not a GET response to {_http.BaseAddress}/{path}");
                 _logger.LogError($"Error info: {e.ToString()}");
                 _logger.LogTrace("Returning exception for caller to handle.");
@@ -138,7 +136,6 @@ namespace Keyfactor.Extensions.Utilities.HttpInterface
             }
             catch (Exception e)
             {
-                // TODO: check other specific errors, timeout / cancellation
                 _logger.LogError($"Unexpected error that was not a POST response to {_http.BaseAddress}/{path}");
                 _logger.LogError($"Error info: {e.ToString()}");
                 _logger.LogTrace("Returning exception for caller to handle.");
@@ -177,7 +174,6 @@ namespace Keyfactor.Extensions.Utilities.HttpInterface
             }
             catch (Exception e)
             {
-                // TODO: check other specific errors, timeout / cancellation
                 _logger.LogError($"Unexpected error that was not a PUT response to {_http.BaseAddress}/{path}");
                 _logger.LogError($"Error info: {e.ToString()}");
                 _logger.LogTrace("Returning exception for caller to handle.");
@@ -216,7 +212,6 @@ namespace Keyfactor.Extensions.Utilities.HttpInterface
             }
             catch (Exception e)
             {
-                // TODO: check other specific errors, timeout / cancellation
                 _logger.LogError($"Unexpected error that was not a DELETE response to {_http.BaseAddress}/{path}");
                 _logger.LogError($"Error info: {e.ToString()}");
                 _logger.LogTrace("Returning exception for caller to handle.");

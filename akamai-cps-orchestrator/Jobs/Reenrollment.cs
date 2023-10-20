@@ -77,6 +77,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
 
                     if (!subjectParsedSuccessfully)
                     {
+                        logger.LogWarning($"Warning: subject requested may not match a supported CSR in Akamai, preventing Reenrollment from succeeding.");
                         logger.LogInformation($"Subject element '{subjectPair[0]}' with value '{subjectPair[1]}' was not included in the Reenrollment subject sent to Akamai.");
                     }
                 }
