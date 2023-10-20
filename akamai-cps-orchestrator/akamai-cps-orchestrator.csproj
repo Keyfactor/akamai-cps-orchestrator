@@ -25,4 +25,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\http-interface\http-interface.csproj" />
+  </ItemGroup>
+
 </Project>
