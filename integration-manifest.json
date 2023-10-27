@@ -3,6 +3,7 @@
   "integration_type": "orchestrator",
   "name": "Akamai Certificate Provisioning System (CPS)",
   "status": "production",
+  "release_dir": "akamai-cps-orchestrator/bin/Release/netcoreapp3.1",
   "update_catalog": true,
   "link_github": true,
   "description": "The Akamai Certificate Provisioning System (CPS) Orchestrator is capable of inventorying existing certificates on the Akamai platform, and performing enrollments and renewals of certificates with keys generated on the Akamai system.",
