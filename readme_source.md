@@ -9,7 +9,7 @@ The Akamai CPS orchestrator extension implements the following capabilities:
 
 ## Keyfactor Version Supported
 
-The Akamai CPS orchestrator extension has requires a Keyfactor Platform version of 9.10 or greater to support encrypted certificate store parameters for authentication.
+The Akamai CPS orchestrator extension requires a Keyfactor Platform version of 9.10 or greater to support encrypted certificate store parameters for authentication.
 
 ## Akamai Platform Configuration
 
