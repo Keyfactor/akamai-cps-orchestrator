@@ -1,540 +1,64 @@
 {
-  "$schema": "https://keyfactor.github.io/integration-manifest-schema.json",
-  "integration_type": "orchestrator",
-  "name": "Akamai Certificate Provisioning System (CPS)",
-  "status": "production",
-  "release_dir": "akamai-cps-orchestrator/bin/Release/netcoreapp3.1",
-  "update_catalog": true,
-  "link_github": true,
-  "description": "The Akamai Certificate Provisioning System (CPS) Orchestrator is capable of inventorying existing certificates on the Akamai platform, and performing enrollments and renewals of certificates with keys generated on the Akamai system.",
-  "about": {
-    "orchestrator": {
-      "win": {
-        "supportsCreateStore": false,
-        "supportsDiscovery": false,
-        "supportsManagementAdd": false,
-        "supportsManagementRemove": false,
-        "supportsReenrollment": true,
-        "supportsInventory": true,
-        "platformSupport": "Unused"
-      },
-      "linux": {
-        "supportsCreateStore": false,
-        "supportsDiscovery": false,
-        "supportsManagementAdd": false,
-        "supportsManagementRemove": false,
-        "supportsReenrollment": true,
-        "supportsInventory": true,
-        "platformSupport": "Unused"
-      },
-      "store_types": {
-        "Akamai": {
-          "Name": "Akamai Certificate Provisioning Service",
-          "ShortName": "Akamai",
-          "Capability": "Akamai",
-          "LocalStore": false,
-          "SupportedOperations": {
-            "Add": false,
-            "Create": false,
-            "Discovery": false,
-            "Enrollment": true,
-            "Remove": false
-          },
-          "Properties": [
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "access_token",
-              "DisplayName": "Access Token",
-              "Type": "Secret",
-              "DependsOn": null,
-              "DefaultValue": null,
-              "Required": true
+    "$schema": "/Users/hroszell/coding/dev/staff-tools/keyfactor.github.io/v2/integration-manifest-schema.json",
+    "integration_type": "orchestrator",
+    "name": "Akamai Certificate Provisioning System (CPS)",
+    "status": "production",
+    "release_dir": "akamai-cps-orchestrator/bin/Release/netcoreapp3.1",
+    "update_catalog": true,
+    "link_github": true,
+    "description": "The Akamai Certificate Provisioning System (CPS) Orchestrator is capable of inventorying existing certificates on the Akamai platform, and performing enrollments and renewals of certificates with keys generated on the Akamai system.",
+    "about": {
+        "orchestrator": {
+            "win": {
+                "supportsCreateStore": false,
+                "supportsDiscovery": false,
+                "supportsManagementAdd": false,
+                "supportsManagementRemove": false,
+                "supportsReenrollment": true,
+                "supportsInventory": true,
+                "platformSupport": "Unused"
             },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "client_token",
-              "DisplayName": "Client Token",
-              "Type": "Secret",
-              "DependsOn": null,
-              "DefaultValue": null,
-              "Required": true
+            "linux": {
+                "supportsCreateStore": false,
+                "supportsDiscovery": false,
+                "supportsManagementAdd": false,
+                "supportsManagementRemove": false,
+                "supportsReenrollment": true,
+                "supportsInventory": true,
+                "platformSupport": "Unused"
             },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "client_secret",
-              "DisplayName": "Client Secret",
-              "Type": "Secret",
-              "DependsOn": null,
-              "DefaultValue": null,
-              "Required": true
-            }
-          ],
-          "EntryParameters": [
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "EnrollmentId",
-              "DisplayName": "Enrollment ID",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": false
-              }
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "ContractId",
-              "DisplayName": "Contract ID",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "Sans",
-              "DisplayName": "SANs",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              }
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "admin-addressLineOne",
-              "DisplayName": "Admin - Address Line 1",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "admin-addressLineTwo",
-              "DisplayName": "Admin - Address Line 2",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": false
-              }
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "admin-city",
-              "DisplayName": "Admin - City",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "admin-country",
-              "DisplayName": "Admin - Country",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "admin-email",
-              "DisplayName": "Admin - Email",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "admin-firstName",
-              "DisplayName": "Admin - First Name",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "admin-lastName",
-              "DisplayName": "Admin - Last Name",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "admin-organizationName",
-              "DisplayName": "Admin - Organization Name",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "admin-phone",
-              "DisplayName": "Admin - Phone",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "admin-postalCode",
-              "DisplayName": "Admin - Postal Code",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "admin-region",
-              "DisplayName": "Admin - Region",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "admin-title",
-              "DisplayName": "Admin - Title",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "org-addressLineOne",
-              "DisplayName": "Org - Address Line 1",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "org-addressLineTwo",
-              "DisplayName": "Org - Address Line 2",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": false
-              }
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "org-city",
-              "DisplayName": "Org - City",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "org-country",
-              "DisplayName": "Org - Country",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "org-organizationName",
-              "DisplayName": "Org - Organization Name",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "org-phone",
-              "DisplayName": "Org - Phone",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "org-postalCode",
-              "DisplayName": "Org - Postal Code",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "org-region",
-              "DisplayName": "Org - Region",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "tech-addressLineOne",
-              "DisplayName": "Tech - Address Line 1",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "tech-addressLineTwo",
-              "DisplayName": "Tech - Address Line 2",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": false
-              }
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "tech-city",
-              "DisplayName": "Tech - City",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "tech-country",
-              "DisplayName": "Tech - Country",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "tech-email",
-              "DisplayName": "Tech - Email",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "tech-firstName",
-              "DisplayName": "Tech - First Name",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "tech-lastName",
-              "DisplayName": "Tech - Last Name",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "tech-organizationName",
-              "DisplayName": "Tech - Organization Name",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "tech-phone",
-              "DisplayName": "Tech - Phone",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "tech-postalCode",
-              "DisplayName": "Tech - Postal Code",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "tech-region",
-              "DisplayName": "Tech - Region",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            },
-            {
-              "StoreTypeId;omitempty": 0,
-              "Name": "tech-title",
-              "DisplayName": "Tech - Title",
-              "Type": "String",
-              "RequiredWhen": {
-                "HasPrivateKey": false,
-                "OnAdd": false,
-                "OnRemove": false,
-                "OnReenrollment": true
-              },
-              "DefaultValue": null
-            }
-          ],
-          "PasswordOptions": {
-            "EntrySupported": false,
-            "StoreRequired": false,
-            "Style": "Default"
-          },
-          "StorePathType": "MultipleChoice",
-          "StorePathValue": "[\"Production\",\"Staging\"]",
-          "PrivateKeyAllowed": "Forbidden",
-          "ServerRequired": false,
-          "PowerShell": false,
-          "BlueprintAllowed": false,
-          "CustomAliasAllowed": "Forbidden"
+            "store_types": [
+                {
+                    "Name": "Akamai Certificate Provisioning Service",
+                    "ShortName": "Akamai",
+                    "Capability": "Akamai",
+                    "LocalStore": false,
+                    "SupportedOperations": {
+                        "Add": false,
+                        "Create": false,
+                        "Discovery": false,
+                        "Enrollment": true,
+                        "Remove": false
+                    },
+                    "Properties": [],
+                    "EntryParameters": [],
+                    "PasswordOptions": {
+                        "EntrySupported": false,
+                        "StoreRequired": false,
+                        "Style": "Default"
+                    },
+                    "StorePathType": "MultipleChoice",
+                    "StorePathValue": "[\"Production\",\"Staging\"]",
+                    "PrivateKeyAllowed": "Forbidden",
+                    "ServerRequired": false,
+                    "PowerShell": false,
+                    "BlueprintAllowed": false,
+                    "CustomAliasAllowed": "Forbidden",
+                    "ClientMachineDescription": "For the Client Machine field, the user should enter the hostname of the Akamai API endpoint that will be used to manage the certificates. Example: `api.ccu.akamai.com`.",
+                    "StorePathDescription": "For the Store Path field, the user should enter either `Production` or `Staging` to specify the environment where the certificates will be managed within the Akamai platform."
+                }
+            ]
         }
-      }
-    }
-  }
+    },
+    "support_level": "kf-supported"
 }
