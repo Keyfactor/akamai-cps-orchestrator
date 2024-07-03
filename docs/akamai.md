@@ -190,8 +190,8 @@ The following table describes the required and optional fields for the `Akamai` 
 | --------- | ----------- | ------------------------- |
 | Category | Select "Akamai Certificate Provisioning Service" or the customized certificate store name from the previous step. | |
 | Container | Optional container to associate certificate store with. | |
-| Client Machine | For the Client Machine field, the user should enter the hostname of the Akamai API endpoint that will be used to manage the certificates. Example: `api.ccu.akamai.com`. | |
-| Store Path | For the Store Path field, the user should enter either `Production` or `Staging` to specify the environment where the certificates will be managed within the Akamai platform. | |
+| Client Machine | The hostname for the Akamai API endpoint used for certificate management. Example: `host` | |
+| Store Path | The specific environment within Akamai where the certificates will be managed, either 'Production' or 'Staging'. Example: `Production` | |
 | Orchestrator | Select an approved orchestrator capable of managing `Akamai` certificates. Specifically, one with the `Akamai` capability. | |
 
 * **Using kfutil**

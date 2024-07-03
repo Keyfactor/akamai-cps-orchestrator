@@ -1,32 +1,14 @@
 {
-    "$schema": "/Users/hroszell/coding/dev/staff-tools/keyfactor.github.io/v2/integration-manifest-schema.json",
+    "$schema": "https://keyfactor.github.io/v2/integration-manifest-schema.json",
     "integration_type": "orchestrator",
     "name": "Akamai Certificate Provisioning System (CPS)",
     "status": "production",
     "release_dir": "akamai-cps-orchestrator/bin/Release/netcoreapp3.1",
     "update_catalog": true,
     "link_github": true,
-    "description": "The Akamai Certificate Provisioning System (CPS) Orchestrator is capable of inventorying existing certificates on the Akamai platform, and performing enrollments and renewals of certificates with keys generated on the Akamai system.",
+    "description": "The Akamai CPS Universal Orchestrator extension enables remote management of cryptographic certificates within the Akamai platform by supporting inventory, adding, and removing operations as well as certificate reenrollment.",
     "about": {
         "orchestrator": {
-            "win": {
-                "supportsCreateStore": false,
-                "supportsDiscovery": false,
-                "supportsManagementAdd": false,
-                "supportsManagementRemove": false,
-                "supportsReenrollment": true,
-                "supportsInventory": true,
-                "platformSupport": "Unused"
-            },
-            "linux": {
-                "supportsCreateStore": false,
-                "supportsDiscovery": false,
-                "supportsManagementAdd": false,
-                "supportsManagementRemove": false,
-                "supportsReenrollment": true,
-                "supportsInventory": true,
-                "platformSupport": "Unused"
-            },
             "store_types": [
                 {
                     "Name": "Akamai Certificate Provisioning Service",
@@ -54,8 +36,8 @@
                     "PowerShell": false,
                     "BlueprintAllowed": false,
                     "CustomAliasAllowed": "Forbidden",
-                    "ClientMachineDescription": "For the Client Machine field, the user should enter the hostname of the Akamai API endpoint that will be used to manage the certificates. Example: `api.ccu.akamai.com`.",
-                    "StorePathDescription": "For the Store Path field, the user should enter either `Production` or `Staging` to specify the environment where the certificates will be managed within the Akamai platform."
+                    "ClientMachineDescription": "The hostname for the Akamai API endpoint used for certificate management. Example: `host`",
+                    "StorePathDescription": "The specific environment within Akamai where the certificates will be managed, either 'Production' or 'Staging'. Example: `Production`"
                 }
             ]
         }
