@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
+using Keyfactor.Extensions.Utilities.HttpInterface;
 using Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace TestConsole;
 
@@ -41,7 +41,7 @@ class Program
         
         var enrollments = GetEnrollments(client);
         var enrollment = enrollments.FirstOrDefault();
-
+        //
         if (enrollment == null)
         {
             _logger.LogWarning("No enrollments found in system. Unable to perform certificate / enrollment actions");
@@ -50,7 +50,7 @@ class Program
         
         GetEnrollment(client, enrollment.id);
         GetCertificate(client, enrollment.id);
-        GetEnrollmentChangeHistory(client, enrollment.id);
+        // GetEnrollmentChangeHistory(client, enrollment.id);
         UpdateEnrollment(client, enrollment.id, enrollment);
         
         _logger.LogInformation("API test suite completed successfully.");
@@ -65,7 +65,7 @@ class Program
         for (int i = 1; i <= maxRequests; i++)
         {
             var stopwatch = Stopwatch.StartNew();
-            _logger.LogInformation($"Sending request {i} of {maxRequests}");
+            _logger.LogInformation($"Sending request {i} of {maxRequests}...");
             client.GetEnrollments();
             stopwatch.Stop();
             _logger.LogInformation($"Completed request {i} of {maxRequests}. Time elapsed (ms): {stopwatch.ElapsedMilliseconds}");
