@@ -23,12 +23,6 @@ using Newtonsoft.Json;
 
 namespace Keyfactor.Extensions.Utilities.HttpInterface
 {
-    public class HttpRequestConfig
-    {
-        public string Accept { get; set; } = "application/json";
-        public string ContentType { get; set; } = "application/json";
-    }
-    
     public class HttpInterface
     {
         private ILogger _logger;

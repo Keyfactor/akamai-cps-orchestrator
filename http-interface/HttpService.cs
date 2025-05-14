@@ -23,15 +23,6 @@ using Polly.Retry;
 
 namespace Keyfactor.Extensions.Utilities.HttpInterface
 {
-    
-    public class HttpServiceConfig
-    {
-        public string Accept { get; set; } = "application/json";
-        public string ContentType { get; set; } = "application/json";
-        public Func<Task<AuthenticationHeaderValue>> AuthorizationDelegate { get; set; }
-    }
-    
-    
     public class HttpService
     {
         private readonly ILogger _logger;
@@ -66,7 +57,7 @@ namespace Keyfactor.Extensions.Utilities.HttpInterface
         {
             return await _retryPolicy.ExecuteAsync(async () =>
                 {
-                    var request = await BuildHttpRequestMessage(config, HttpMethod.Get, url);
+                    using HttpRequestMessage request = await BuildHttpRequestMessage(config, HttpMethod.Get, url);
                     
                     return await _httpClient.SendAsync(request).ConfigureAwait(false);
                 })
@@ -77,7 +68,7 @@ namespace Keyfactor.Extensions.Utilities.HttpInterface
         {
             return await _retryPolicy.ExecuteAsync(async () =>
                 {
-                    var request = await BuildHttpRequestMessage(config, HttpMethod.Post, url);
+                    using HttpRequestMessage request = await BuildHttpRequestMessage(config, HttpMethod.Post, url);
                     AddContentToRequest(config, request, content);
                     return await _httpClient.SendAsync(request);
                 })
@@ -88,7 +79,7 @@ namespace Keyfactor.Extensions.Utilities.HttpInterface
         {
             return await _retryPolicy.ExecuteAsync(async () =>
                 {
-                    var request = await BuildHttpRequestMessage(config, HttpMethod.Put, url);
+                    using HttpRequestMessage request = await BuildHttpRequestMessage(config, HttpMethod.Put, url);
                     AddContentToRequest(config, request, content);
                     return await _httpClient.SendAsync(request);
                 })
@@ -99,7 +90,7 @@ namespace Keyfactor.Extensions.Utilities.HttpInterface
         {
             return await _retryPolicy.ExecuteAsync(async () =>
                 {
-                    var request = await BuildHttpRequestMessage(config, HttpMethod.Delete, url);
+                    using HttpRequestMessage request = await BuildHttpRequestMessage(config, HttpMethod.Delete, url);
                     
                     return await _httpClient.SendAsync(request).ConfigureAwait(false);
                 })
@@ -108,7 +99,7 @@ namespace Keyfactor.Extensions.Utilities.HttpInterface
         
         private async Task<HttpRequestMessage> BuildHttpRequestMessage(HttpServiceConfig config, HttpMethod method, string url)
         {
-            var request = new HttpRequestMessage(method, url);
+            HttpRequestMessage request = new HttpRequestMessage(method, url);
             
             if (config.Accept != null)
             {
