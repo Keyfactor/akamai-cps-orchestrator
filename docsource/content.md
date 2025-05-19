@@ -1,4 +1,3 @@
-
 ## Use Cases
 
 The Akamai CPS orchestrator extension implements the following capabilities:
@@ -80,3 +79,8 @@ Renewing existing certificates in Akamai means running a Reenrollment Job with t
 The Workflow should be configured to target a Keyfactor Collection of certificates that includes the Akamai certificates that need to be renewed. This can be done with a query targeting the `CertStoreFQDN` containing `Akamai` and can be further restricted with the `CertStorePath` being equal to `Production` or `Staging`.
 
 A sample workflow for ODKG / Reenrollment scheduling for renewals can be viewed in the [kf-workflow-samples repo](https://github.com/Keyfactor/kf-workflow-samples). When running the sample workflow, it will assume that all certs passed to the script should schedule a Reenrollment job with their existing parameters in Akamai.
+
+## Overview
+
+TODO Overview is a required section
+
