@@ -1,3 +1,8 @@
+## Overview
+
+Akamai Certificate Provisioning Service (CPS) provides ceritificate management and administration for certificates that are used within Akamai systems. This orchestrator interacts with Akamai CPS in order to Inventory certificates currently defined in that platform, and also supports adding new certificates or renewing existing ones.
+New certificates are created in Akamai CPS via On Device Key Generation (ODKG aka Reenrollment). This means that certificates cannot be directly added to the CPS system, but instead need to have their keys generated in Akamai and then have a certificate issued for that keypair via a CSR.
+This workflow is completely automated in the Akamai CPS Orchestrator. As a result, full contact information for the resulting certificates needs to be configured as this is required by Akamai. Additionally, the orchestrator automatically approves certificate deployments, even if there are warnings. This behavior should be understood and acknowledged if continuing to use the Akamai CPS Orchestrator.
 
 ## Use Cases
 
