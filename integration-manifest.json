@@ -3,7 +3,9 @@
   "integration_type": "orchestrator",
   "name": "Akamai Certificate Provisioning System (CPS)",
   "status": "production",
-  "release_dir": "akamai-cps-orchestrator/bin/Release/netcoreapp3.1",
+  "support_level": "kf-supported",
+  "release_dir": "akamai-cps-orchestrator/bin/Release",
+  "release_project": "akamai-cps-orchestrator/akamai-cps-orchestrator.csproj",
   "update_catalog": true,
   "link_github": true,
   "description": "The Akamai Certificate Provisioning System (CPS) Orchestrator is capable of inventorying existing certificates on the Akamai platform, and performing enrollments and renewals of certificates with keys generated on the Akamai system.",
@@ -29,8 +31,8 @@
         "supportsInventory": true,
         "platformSupport": "Unused"
       },
-      "store_types": {
-        "Akamai": {
+      "store_types": [
+        {
           "Name": "Akamai Certificate Provisioning Service",
           "ShortName": "Akamai",
           "Capability": "Akamai",
@@ -44,36 +46,38 @@
           },
           "Properties": [
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "access_token",
               "DisplayName": "Access Token",
               "Type": "Secret",
-              "DependsOn": null,
-              "DefaultValue": null,
-              "Required": true
+              "DependsOn": "",
+              "DefaultValue": "",
+              "Required": true,
+              "IsPAMEligible": false,
+              "Description": "The Akamai access_token for authentication."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "client_token",
               "DisplayName": "Client Token",
               "Type": "Secret",
-              "DependsOn": null,
-              "DefaultValue": null,
-              "Required": true
+              "DependsOn": "",
+              "DefaultValue": "",
+              "Required": true,
+              "IsPAMEligible": false,
+              "Description": "The Akamai client_token for authentication."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "client_secret",
               "DisplayName": "Client Secret",
               "Type": "Secret",
-              "DependsOn": null,
-              "DefaultValue": null,
-              "Required": true
+              "DependsOn": "",
+              "DefaultValue": "",
+              "Required": true,
+              "IsPAMEligible": false,
+              "Description": "The Akamai client_secret for authentication."
             }
           ],
           "EntryParameters": [
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "EnrollmentId",
               "DisplayName": "Enrollment ID",
               "Type": "String",
@@ -82,10 +86,10 @@
                 "OnAdd": false,
                 "OnRemove": false,
                 "OnReenrollment": false
-              }
+              },
+              "Description": "Enrollment ID of a certificate enrollment in Akamai. This should only be supplied for ODKG when replacing an existing certificate."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "ContractId",
               "DisplayName": "Contract ID",
               "Type": "String",
@@ -95,10 +99,10 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "SET-DEFAULT",
+              "Description": "The Contract ID of your account in Akamai."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "Sans",
               "DisplayName": "SANs",
               "Type": "String",
@@ -107,10 +111,10 @@
                 "OnAdd": false,
                 "OnRemove": false,
                 "OnReenrollment": true
-              }
+              },
+              "Description": "SANs for the new certificate. If multiple are supplied, they should be split with an ampersand character '&'"
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "admin-addressLineOne",
               "DisplayName": "Admin - Address Line 1",
               "Type": "String",
@@ -120,10 +124,10 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "SET-DEFAULT",
+              "Description": "Required field for Administrator contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "admin-addressLineTwo",
               "DisplayName": "Admin - Address Line 2",
               "Type": "String",
@@ -132,10 +136,10 @@
                 "OnAdd": false,
                 "OnRemove": false,
                 "OnReenrollment": false
-              }
+              },
+              "Description": "Optional field for Administrator contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "admin-city",
               "DisplayName": "Admin - City",
               "Type": "String",
@@ -145,10 +149,10 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "SET-DEFAULT",
+              "Description": "Required field for Administrator contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "admin-country",
               "DisplayName": "Admin - Country",
               "Type": "String",
@@ -158,10 +162,10 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "SET-DEFAULT",
+              "Description": "Required field for Administrator contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "admin-email",
               "DisplayName": "Admin - Email",
               "Type": "String",
@@ -171,10 +175,10 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "SET-DEFAULT",
+              "Description": "Required field for Administrator contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "admin-firstName",
               "DisplayName": "Admin - First Name",
               "Type": "String",
@@ -184,10 +188,10 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "SET-DEFAULT",
+              "Description": "Required field for Administrator contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "admin-lastName",
               "DisplayName": "Admin - Last Name",
               "Type": "String",
@@ -197,10 +201,10 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "SET-DEFAULT",
+              "Description": "Required field for Administrator contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "admin-organizationName",
               "DisplayName": "Admin - Organization Name",
               "Type": "String",
@@ -210,10 +214,10 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "SET-DEFAULT",
+              "Description": "Required field for Administrator contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "admin-phone",
               "DisplayName": "Admin - Phone",
               "Type": "String",
@@ -223,10 +227,10 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "SET-DEFAULT",
+              "Description": "Required field for Administrator contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "admin-postalCode",
               "DisplayName": "Admin - Postal Code",
               "Type": "String",
@@ -236,10 +240,10 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "SET-DEFAULT",
+              "Description": "Required field for Administrator contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "admin-region",
               "DisplayName": "Admin - Region",
               "Type": "String",
@@ -249,10 +253,10 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "SET-DEFAULT",
+              "Description": "Required field for Administrator contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "admin-title",
               "DisplayName": "Admin - Title",
               "Type": "String",
@@ -262,10 +266,10 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "SET-DEFAULT",
+              "Description": "Required field for Administrator contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "org-addressLineOne",
               "DisplayName": "Org - Address Line 1",
               "Type": "String",
@@ -275,10 +279,10 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "SET-DEFAULT",
+              "Description": "Required field for Organization contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "org-addressLineTwo",
               "DisplayName": "Org - Address Line 2",
               "Type": "String",
@@ -287,10 +291,10 @@
                 "OnAdd": false,
                 "OnRemove": false,
                 "OnReenrollment": false
-              }
+              },
+              "Description": "Optional field for Organization contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "org-city",
               "DisplayName": "Org - City",
               "Type": "String",
@@ -300,10 +304,10 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "SET-DEFAULT",
+              "Description": "Required field for Organization contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "org-country",
               "DisplayName": "Org - Country",
               "Type": "String",
@@ -313,10 +317,10 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "SET-DEFAULT",
+              "Description": "Required field for Organization contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "org-organizationName",
               "DisplayName": "Org - Organization Name",
               "Type": "String",
@@ -326,10 +330,10 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "SET-DEFAULT",
+              "Description": "Required field for Organization contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "org-phone",
               "DisplayName": "Org - Phone",
               "Type": "String",
@@ -339,10 +343,10 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "SET-DEFAULT",
+              "Description": "Required field for Organization contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "org-postalCode",
               "DisplayName": "Org - Postal Code",
               "Type": "String",
@@ -352,10 +356,10 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "SET-DEFAULT",
+              "Description": "Required field for Organization contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "org-region",
               "DisplayName": "Org - Region",
               "Type": "String",
@@ -365,10 +369,10 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "SET-DEFAULT",
+              "Description": "Required field for Organization contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "tech-addressLineOne",
               "DisplayName": "Tech - Address Line 1",
               "Type": "String",
@@ -378,10 +382,10 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "SET-DEFAULT",
+              "Description": "Required field for Akamai Tech contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "tech-addressLineTwo",
               "DisplayName": "Tech - Address Line 2",
               "Type": "String",
@@ -390,10 +394,10 @@
                 "OnAdd": false,
                 "OnRemove": false,
                 "OnReenrollment": false
-              }
+              },
+              "Description": "Optional field for Akamai Tech contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "tech-city",
               "DisplayName": "Tech - City",
               "Type": "String",
@@ -403,10 +407,10 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "SET-DEFAULT",
+              "Description": "Required field for Akamai Tech contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "tech-country",
               "DisplayName": "Tech - Country",
               "Type": "String",
@@ -416,10 +420,10 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "SET-DEFAULT",
+              "Description": "Required field for Akamai Tech contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "tech-email",
               "DisplayName": "Tech - Email",
               "Type": "String",
@@ -429,10 +433,10 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "SET-DEFAULT",
+              "Description": "Required field for Akamai Tech contact. Must be an akamai.com email address."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "tech-firstName",
               "DisplayName": "Tech - First Name",
               "Type": "String",
@@ -442,10 +446,10 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "SET-DEFAULT",
+              "Description": "Required field for Akamai Tech contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "tech-lastName",
               "DisplayName": "Tech - Last Name",
               "Type": "String",
@@ -455,10 +459,10 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "SET-DEFAULT",
+              "Description": "Required field for Akamai Tech contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "tech-organizationName",
               "DisplayName": "Tech - Organization Name",
               "Type": "String",
@@ -468,10 +472,10 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "Akamai",
+              "Description": "Required field for Akamai Tech contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "tech-phone",
               "DisplayName": "Tech - Phone",
               "Type": "String",
@@ -481,10 +485,10 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "SET-DEFAULT",
+              "Description": "Required field for Akamai Tech contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "tech-postalCode",
               "DisplayName": "Tech - Postal Code",
               "Type": "String",
@@ -494,10 +498,10 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "SET-DEFAULT",
+              "Description": "Required field for Akamai Tech contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "tech-region",
               "DisplayName": "Tech - Region",
               "Type": "String",
@@ -507,10 +511,10 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "SET-DEFAULT",
+              "Description": "Required field for Akamai Tech contact."
             },
             {
-              "StoreTypeId;omitempty": 0,
               "Name": "tech-title",
               "DisplayName": "Tech - Title",
               "Type": "String",
@@ -520,7 +524,8 @@
                 "OnRemove": false,
                 "OnReenrollment": true
               },
-              "DefaultValue": null
+              "DefaultValue": "SET-DEFAULT",
+              "Description": "Required field for Akamai Tech contact."
             }
           ],
           "PasswordOptions": {
@@ -536,7 +541,7 @@
           "BlueprintAllowed": false,
           "CustomAliasAllowed": "Forbidden"
         }
-      }
+      ]
     }
   }
 }
