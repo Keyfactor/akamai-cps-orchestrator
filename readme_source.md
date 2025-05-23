@@ -71,23 +71,12 @@ Change any default values as needed, and enter an Enrollment ID if an existing e
 The SAN entry needs to be filled out with the DNS value you are using for the certificate's CN. If there are multiple DNS SANs, they should be separted with an ampersand. Example: `www.example01.com&www.example02.com`
 
 
-**6. (Optional) Configure Renewal of Certificates using Expiration Alert Handler**
+**6. (Optional) Configure Renewal of Certificates using a Workflow**
 
 Akamai does not support traditional certificate Renewal or one-click Renewal done in the Keyfactor Command platform. The Renewal process creates Certificates with outside keys which are not allowed to be imported into Akamai CPS. As a result, the Reenrollment Job must be used in order to renew existing certificates that reside on the Akamai system. Reenrollment is required as opposed to the Renewal process as it allows Akamai to generate the keys on their platform, which are used to create a certificate in Keyfactor.
 
-Renewing existing certificates in Akamai means running a Reenrollment Job with the same Enrollment ID that was used for an existing Certificate Enrollment. This can be done manually through the Reenrollment process, but an automated process can also be configured using a Keyfactor Expiration Alert Handler.
+Renewing existing certificates in Akamai means running a Reenrollment Job with the same Enrollment ID that was used for an existing Certificate Enrollment. This can be done manually through the Reenrollment prompt, but an automated process can also be configured using a Keyfactor Workflow.
 
-The Expiration Alert Handler should be configured to target a Keyfactor Collection of certificates that includes the Akamai certificates that need to be renewed. This can be done with a query targeting the `CertStoreFQDN` containing `Akamai` and can be further restricted with the `CertStorePath` being equal to `Production` or `Staging`.
+The Workflow should be configured to target a Keyfactor Collection of certificates that includes the Akamai certificates that need to be renewed. This can be done with a query targeting the `CertStoreFQDN` containing `Akamai` and can be further restricted with the `CertStorePath` being equal to `Production` or `Staging`.
 
-With the Expiration Alert Handler using the correct Collection, the Alert should be set to use the `ExpirationPowershell` Handler. A [sample Powershell Handler script](./akamai-cps-orchestrator/AkamaiExpirationHandler.ps1) is included in this repository. The sample script needs to be updated with the correct URL for API requests, and may need other changes as well, as it assumes that Default Credentials (Windows Auth) can be used to authenticate API requests to the Keyfactor instance. __This script needs to be placed in the Keyfactor Command installation's configured Extension Handler Path (default: {installation_dir}\ExtensionLibrary) location so that it can be run.__
-
-The `ExpirationPowershell` Event Handler configuration should be configured with the following values:
-
-| Parameter Name | Type | Value |
-| - | - | - |
-| Thumbprint | Special Text | Thumbprint |
-| Template | Renewal Template | `desired renewal template` |
-| CAConfiguration | Renewal Certificate Authority | `desired renewal CA` |
-| ScriptName | PowerShell Script Name | AkamaiExpirationHandler.ps1 |
-
-When running the sample script, it will assume that all certs passed to the script should schedule a Reenrollment job with their existing parameters in Akamai.
+A sample workflow for ODKG / Reenrollment scheduling for renewals can be viewed in the [kf-workflow-samples repo](https://github.com/Keyfactor/kf-workflow-samples). When running the sample workflow, it will assume that all certs passed to the script should schedule a Reenrollment job with their existing parameters in Akamai.
