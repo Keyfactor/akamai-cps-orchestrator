@@ -1,6 +1,5 @@
 ## Overview
 
-### Notes:
 > [!WARNING]
 > If creating the Certificate Store Type manually, be aware that you will need to save the store-type configuration without entering the custom fields and entry parameters. This is due to a UI limitation. After saving the store type, you will need to run [this SQL script](akamai-cps-orchestrator/jobproperties.sql) on the Keyfactor database to generate all the fields and parameters needed for Akamai CPS.
 
