@@ -28,58 +28,64 @@ namespace Keyfactor.Extensions.Utilities.HttpInterface
         private ILogger _logger;
         private HttpClient _http;
         private SocketsHttpHandler _httpHandler; // TODO: use to make requests with headers
+        private HttpService _httpService;
+        private readonly AkamaiAuth _auth;
+        private readonly string _hostname;
+        private readonly JsonSerializerSettings _serializerSettings = new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore };
 
         public int Timeout { get; set; }
 
-        public HttpInterface(ILogger logger, string baseAddress, bool useSSL)
+        public HttpInterface(ILogger logger, AkamaiAuth auth, string hostname, bool useSSL)
         {
             _logger = logger;
             _http = new HttpClient();
-            // TODO: check if http(s) prefix is already present
-            // TODO: parse incoming baseAddress as URI
-            _logger.LogDebug($"Base Address - {baseAddress}");
+
+            _logger.LogDebug($"Base Address - {hostname}");
             _logger.LogDebug($"Using SSL - {useSSL}");
+            
+            _auth = auth;
+
+            // TODO: Configure the max retries via a parameter?
+            _httpService = new HttpService(_logger, _http, 3);
+            
+            HttpUtilities.TryGetHostname(hostname, out _hostname);
+            
             if (useSSL)
             {
-                _http.BaseAddress = new Uri($"https://{baseAddress}/");
+                _http.BaseAddress = new Uri($"https://{_hostname}/");
             }
             else
             {
-                _http.BaseAddress = new Uri($"http://{baseAddress}/");
+                _http.BaseAddress = new Uri($"http://{_hostname}/");
             }
 
         }
-
-        public void SetRequestHeaders(Dictionary<string, string> headers)
+        
+        public T Get<T>(HttpRequestConfig req, string path)
         {
-            // TODO: set on httpHandler per request instead of defaults for whole client each time
-            _http.DefaultRequestHeaders.Clear();
-            foreach (var key in headers.Keys)
-            {
-                _logger.LogDebug($"Adding header - {key}: {headers[key]}");
-                _http.DefaultRequestHeaders.Add(key, headers[key]);
-            }
-    
-        }
-
-        public void AddAuthHeader(AuthenticationHeaderValue authHeader)
-        {
-            _http.DefaultRequestHeaders.Authorization = authHeader;
-        }
-
-        public T Get<T>(string path)
-        {
-            string json = GetRaw(path);
+            string json = GetRaw(req, path);
             _logger.LogTrace($"Received GET response. Deserializing into type {typeof(T)}");
             return JsonConvert.DeserializeObject<T>(json);
         }
-
-        public string GetRaw(string path)
+        
+        public string GetRaw(HttpRequestConfig req, string path)
         {
             try
             {
                 _logger.LogDebug($"Performing GET request to {_http.BaseAddress}/{path}");
-                var response = _http.GetAsync(path).Result;
+                
+                var config = new HttpServiceConfig()
+                {
+                    Accept = req.Accept,
+                    ContentType = req.ContentType,
+                    AuthorizationDelegate = async () => _auth.GenerateAuthHeader("GET", _hostname, path)
+                };
+                
+                var response = _httpService
+                    .GetAsync(config, path)
+                    .GetAwaiter()
+                    .GetResult();
+                
                 _logger.LogTrace($"Completed GET request. Reading response");
                 return ReadHttpResponse(response);
             }
@@ -104,20 +110,31 @@ namespace Keyfactor.Extensions.Utilities.HttpInterface
                 throw;
             }
         }
-
-        public T Post<T>(string path, StringContent body)
+        
+        public T2 Post<T1, T2>(HttpRequestConfig req, string path, T1 body)
         {
-            string json = PostRaw(path, body);
-            _logger.LogTrace($"Received POST response. Deserializing into type {typeof(T)}");
-            return JsonConvert.DeserializeObject<T>(json);
+            string content = JsonConvert.SerializeObject(body, _serializerSettings);
+            string json = PostRaw(req, path, content);
+            _logger.LogTrace($"Received POST response. Deserializing into type {typeof(T2)}");
+            return JsonConvert.DeserializeObject<T2>(json);
         }
-
-        public string PostRaw(string path, StringContent body)
+        
+        public string PostRaw(HttpRequestConfig req, string path, string body)
         {
             try
             {
                 _logger.LogDebug($"Performing POST request to {_http.BaseAddress}/{path}");
-                var response = _http.PostAsync(path, body).Result;
+                
+                var config = new HttpServiceConfig()
+                {
+                    Accept = req.Accept,
+                    ContentType = req.ContentType,
+                    AuthorizationDelegate = async () => _auth.GenerateAuthHeader("POST", _hostname, path, body)
+                };
+
+                var content = new StringContent(body);
+                
+                var response = _httpService.PostAsync(config, path, content).GetAwaiter().GetResult();
                 _logger.LogTrace($"Completed POST request. Reading response");
                 return ReadHttpResponse(response);
             }
@@ -142,20 +159,30 @@ namespace Keyfactor.Extensions.Utilities.HttpInterface
                 throw;
             }
         }
-
-        public T Put<T>(string path, StringContent body)
+        
+        public T2 Put<T1, T2>(HttpRequestConfig req, string path, T1 content)
         {
-            string json = PutRaw(path, body);
-            _logger.LogTrace($"Received PUT response. Deserializing into type {typeof(T)}");
-            return JsonConvert.DeserializeObject<T>(json);
+            string body = JsonConvert.SerializeObject(content, _serializerSettings);
+            string json = PutRaw(req, path, body);
+            _logger.LogTrace($"Received PUT response. Deserializing into type {typeof(T2)}");
+            return JsonConvert.DeserializeObject<T2>(json);
         }
-
-        public string PutRaw(string path, StringContent body)
+        
+        public string PutRaw(HttpRequestConfig req, string path, string body)
         {
             try
             {
                 _logger.LogDebug($"Performing PUT request to {_http.BaseAddress}/{path}");
-                var response = _http.PutAsync(path, body).Result;
+                
+                var config = new HttpServiceConfig()
+                {
+                    Accept = req.Accept,
+                    ContentType = req.ContentType,
+                    AuthorizationDelegate = async () => _auth.GenerateAuthHeader("PUT", _hostname, path)
+                };
+                
+                var content = new StringContent(body);
+                var response = _httpService.PutAsync(config, path, content).GetAwaiter().GetResult();
                 _logger.LogTrace($"Completed PUT request. Reading response");
                 return ReadHttpResponse(response);
             }
@@ -180,20 +207,28 @@ namespace Keyfactor.Extensions.Utilities.HttpInterface
                 throw;
             }
         }
-
-        public T Delete<T>(string path)
+        
+        public T Delete<T>(HttpRequestConfig req, string path)
         {
-            string json = DeleteRaw(path);
+            string json = DeleteRaw(req, path);
             _logger.LogTrace($"Received DELETE response. Deserializing into type {typeof(T)}");
             return JsonConvert.DeserializeObject<T>(json);
         }
-
-        public string DeleteRaw(string path)
+        
+        public string DeleteRaw(HttpRequestConfig req, string path)
         {
             try
             {
                 _logger.LogDebug($"Performing DELETE request to {_http.BaseAddress}/{path}");
-                var response = _http.DeleteAsync(path).Result;
+                
+                var config = new HttpServiceConfig()
+                {
+                    Accept = req.Accept,
+                    ContentType = req.ContentType,
+                    AuthorizationDelegate = async () => _auth.GenerateAuthHeader("DELETE", _hostname, path)
+                };
+                
+                var response = _httpService.DeleteAsync(config, path).GetAwaiter().GetResult();
                 _logger.LogTrace($"Completed DELETE request. Reading response");
                 return ReadHttpResponse(response);
             }
@@ -221,7 +256,7 @@ namespace Keyfactor.Extensions.Utilities.HttpInterface
 
         private string ReadHttpResponse(HttpResponseMessage response)
         {
-            string responseMessage = response.Content.ReadAsStringAsync().Result;
+            string responseMessage = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
             if (response.IsSuccessStatusCode)
             {
                 return responseMessage;
