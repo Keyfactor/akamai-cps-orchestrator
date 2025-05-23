@@ -78,20 +78,20 @@ To use the Akamai Certificate Provisioning System (CPS) Universal Orchestrator e
 
 
 
-> :warning:
+#### Notes:
+> [!WARNING]
 > If creating the Certificate Store Type manually, be aware that you will need to save the store-type configuration without entering the custom fields and entry parameters. This is due to a UI limitation. After saving the store type, you will need to run [this SQL script](akamai-cps-orchestrator/jobproperties.sql) on the Keyfactor database to generate all the fields and parameters needed for Akamai CPS.
 
-#### Notes:
-> :note:
+> [!IMPORTANT]
 > To set the `default` values for the Entry Parameters, you will need to re-open the Certificate Store Type configuration after saving and running [this SQL script](akamai-cps-orchestrator/jobproperties.sql). This is due to a UI limitation.
 
-> :note:
+> [!IMPORTANT]
 > The `Contract ID` should be set to the default contract to be used for new Enrollments. 
  
-> :note:
+> [!IMPORTANT]
 > All address information should be filled out with default expected values, as they are required fields for **each** enrollment created and should not be entered manually unless they need to be overwritten for a specific Enrollment in Akamai.
 
-> :note: 
+> [!IMPORTANT]
 > The Tech contact information should be your Akamai company contact. It must be an Akamai email address (`<contact>@akamai.com`). The contact's organization name must be set to `Akamai`.
 
 
