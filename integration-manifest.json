@@ -539,7 +539,9 @@
           "ServerRequired": false,
           "PowerShell": false,
           "BlueprintAllowed": false,
-          "CustomAliasAllowed": "Forbidden"
+          "CustomAliasAllowed": "Forbidden",
+          "ClientMachineDescription": "The Client Machine field is the Akamai REST API URL. This should be equal to the the \"host\" value from the API credentials file.",
+          "StorePathDescription": "The Akamai network the certificate will be managed from. Value can be either \"Production\" or \"Staging\"."
         }
       ]
     }
