@@ -213,7 +213,7 @@ the Keyfactor Command Portal
 
    ![Akamai Entry Parameters Tab](docsource/images/Akamai-entry-parameters-store-type-dialog.png)
 
-
+   </details>
 
 ## Installation
 
