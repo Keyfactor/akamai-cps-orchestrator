@@ -7,6 +7,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "akamai-cps-orchestrator", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "http-interface", "http-interface\http-interface.csproj", "{C43887FD-287A-4A69-9777-F7895CCFE44F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestConsole", "TestConsole\TestConsole.csproj", "{AA406C8E-2ACE-43B2-BF03-1B7659B7D082}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "http-interface.Tests", "http-interface.Tests\http-interface.Tests.csproj", "{9E9E9B40-868F-4D6B-9D79-FD668B6F7199}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{D55E4F97-06FB-45DE-B041-0DE83EEC87E1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,11 +27,22 @@ Global
 		{C43887FD-287A-4A69-9777-F7895CCFE44F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C43887FD-287A-4A69-9777-F7895CCFE44F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C43887FD-287A-4A69-9777-F7895CCFE44F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA406C8E-2ACE-43B2-BF03-1B7659B7D082}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA406C8E-2ACE-43B2-BF03-1B7659B7D082}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA406C8E-2ACE-43B2-BF03-1B7659B7D082}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA406C8E-2ACE-43B2-BF03-1B7659B7D082}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9E9E9B40-868F-4D6B-9D79-FD668B6F7199}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E9E9B40-868F-4D6B-9D79-FD668B6F7199}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E9E9B40-868F-4D6B-9D79-FD668B6F7199}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E9E9B40-868F-4D6B-9D79-FD668B6F7199}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C851E932-4FDA-4BCF-A048-5F89DDD14106}
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{9E9E9B40-868F-4D6B-9D79-FD668B6F7199} = {D55E4F97-06FB-45DE-B041-0DE83EEC87E1}
 	EndGlobalSection
 EndGlobal
