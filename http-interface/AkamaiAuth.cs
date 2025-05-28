@@ -1,4 +1,4 @@
-﻿// Copyright 2023 Keyfactor
+// Copyright 2025 Keyfactor
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
+namespace Keyfactor.Extensions.Utilities.HttpInterface
 {
     public class AkamaiAuth
     {
