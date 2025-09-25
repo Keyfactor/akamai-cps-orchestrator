@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "http-interface.Tests", "htt
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{D55E4F97-06FB-45DE-B041-0DE83EEC87E1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "akamai-cps-orchestrator.Tests", "akamai-cps-orchestrator.Tests\akamai-cps-orchestrator.Tests.csproj", "{99C90D0F-FC29-4DD5-91A3-7726CA8172AC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,6 +37,10 @@ Global
 		{9E9E9B40-868F-4D6B-9D79-FD668B6F7199}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9E9E9B40-868F-4D6B-9D79-FD668B6F7199}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9E9E9B40-868F-4D6B-9D79-FD668B6F7199}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99C90D0F-FC29-4DD5-91A3-7726CA8172AC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99C90D0F-FC29-4DD5-91A3-7726CA8172AC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99C90D0F-FC29-4DD5-91A3-7726CA8172AC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99C90D0F-FC29-4DD5-91A3-7726CA8172AC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -44,5 +50,6 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{9E9E9B40-868F-4D6B-9D79-FD668B6F7199} = {D55E4F97-06FB-45DE-B041-0DE83EEC87E1}
+		{99C90D0F-FC29-4DD5-91A3-7726CA8172AC} = {D55E4F97-06FB-45DE-B041-0DE83EEC87E1}
 	EndGlobalSection
 EndGlobal
