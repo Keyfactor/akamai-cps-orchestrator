@@ -66,33 +66,24 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                 keyType = GetRequiredValue(allJobProps, "keyType");
                 contractId = GetRequiredValue(allJobProps, "ContractId");
                 string sans = GetRequiredValue(allJobProps, "Sans"); // ampersand split sans
+                
+                logger.LogDebug($"keyType: {keyType}, contractId: {contractId}, sans: {sans}");
 
                 logger.LogDebug($"Reading passed in reenrollment subject: {subject}");
-                string[] subjectParams = subject.Split(',');
-                var subjectValues = new Dictionary<string, string>();
-                foreach (var subjectParam in subjectParams)
-                {
-                    string[] subjectPair = subjectParam.Split('=', 2);
-                    bool subjectParsedSuccessfully = subjectValues.TryAdd(subjectPair[0].ToUpper(), subjectPair[1]);
-
-                    if (!subjectParsedSuccessfully)
-                    {
-                        logger.LogWarning($"Warning: subject requested may not match a supported CSR in Akamai, preventing Reenrollment from succeeding.");
-                        logger.LogInformation($"Subject element '{subjectPair[0]}' with value '{subjectPair[1]}' was not included in the Reenrollment subject sent to Akamai.");
-                    }
-                }
+                var subjectValues = CertificateSubjectInformation.ParseFromSubjectText(subject);
+                logger.LogDebug($"Parsed subject values: {JsonConvert.SerializeObject(subjectValues)}");
 
                 reenrollment = new Enrollment()
                 {
                     csr = new EnrollmentCSR()
                     {
                         // retrieve subject values by uppercase name
-                        cn = subjectValues.GetValueOrDefault("CN"),
-                        c = subjectValues.GetValueOrDefault("C"),
-                        l = subjectValues.GetValueOrDefault("L"),
-                        o = subjectValues.GetValueOrDefault("O"),
-                        ou = subjectValues.GetValueOrDefault("OU"),
-                        st = subjectValues.GetValueOrDefault("ST"),
+                        cn = subjectValues.CommonName,
+                        c = subjectValues.CountryRegion,
+                        l = subjectValues.CityLocality,
+                        o = subjectValues.Organization,
+                        ou = subjectValues.OrganizationalUnit,
+                        st = subjectValues.StateProvince,
                         // split sans entered
                         sans = sans.Split('&')
                     }
@@ -114,6 +105,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                     region = GetRequiredValue(allJobProps, "admin-region"),
                     title = GetRequiredValue(allJobProps, "admin-title")
                 };
+                logger.LogTrace($"Admin Contact added to re-enrollment request.");
                 reenrollment.org = new ContactInfo()
                 {
                     addressLineOne = GetRequiredValue(allJobProps, "org-addressLineOne"),
@@ -125,6 +117,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                     postalCode = GetRequiredValue(allJobProps, "org-postalCode"),
                     region = GetRequiredValue(allJobProps, "org-region")
                 };
+                logger.LogTrace($"Org added to re-enrollment request.");
                 reenrollment.techContact = new ContactInfo()
                 {
                     addressLineOne = GetRequiredValue(allJobProps, "tech-addressLineOne"),
@@ -140,6 +133,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                     region = GetRequiredValue(allJobProps, "tech-region"),
                     title = GetRequiredValue(allJobProps, "tech-title")
                 };
+                logger.LogTrace($"Tech Contact added to re-enrollment request.");
             }
             catch (Exception e)
             {
