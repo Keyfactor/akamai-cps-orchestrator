@@ -49,9 +49,9 @@ continuing to use the Akamai CPS Orchestrator.
 This integration is compatible with Keyfactor Universal Orchestrator version 10.1 and later.
 
 ## Support
-The Akamai Certificate Provisioning System (CPS) Universal Orchestrator extension If you have a support issue, please open a support ticket by either contacting your Keyfactor representative or via the Keyfactor Support Portal at https://support.keyfactor.com.
+The Akamai Certificate Provisioning System (CPS) Universal Orchestrator extension is supported by Keyfactor. If you require support for any issues or have feature request, please open a support ticket by either contacting your Keyfactor representative or via the Keyfactor Support Portal at https://support.keyfactor.com.
 
-> To report a problem or suggest a new feature, use the **[Issues](../../issues)** tab. If you want to contribute actual bug fixes or proposed enhancements, use the **[Pull requests](../../pulls)** tab.
+> If you want to contribute bug fixes or additional enhancements, use the **[Pull requests](../../pulls)** tab.
 
 ## Requirements & Prerequisites
 
@@ -95,6 +95,8 @@ To use the Akamai Certificate Provisioning System (CPS) Universal Orchestrator e
 > The Tech contact information should be your Akamai company contact. It must be an Akamai email address (`<contact>@akamai.com`). The contact's organization name must be set to `Akamai`.
 
 
+
+
 #### Supported Operations
 
 | Operation    | Is Supported                                                                                                           |
@@ -108,7 +110,7 @@ To use the Akamai Certificate Provisioning System (CPS) Universal Orchestrator e
 #### Store Type Creation
 
 ##### Using kfutil:
-`kfutil` is a custom CLI for the Keyfactor Command API and can be used to created certificate store types.
+`kfutil` is a custom CLI for the Keyfactor Command API and can be used to create certificate store types.
 For more information on [kfutil](https://github.com/Keyfactor/kfutil) check out the [docs](https://github.com/Keyfactor/kfutil?tab=readme-ov-file#quickstart)
    <details><summary>Click to expand Akamai kfutil details</summary>
 
@@ -293,8 +295,8 @@ the Keyfactor Command Portal
 
     Click the Add button to add a new Certificate Store. Use the table below to populate the **Attributes** in the **Add** form.
 
-   | Attribute | Description |
-   | --------- | ----------- |
+   | Attribute | Description                                             |
+   | --------- |---------------------------------------------------------|
    | Category | Select "Akamai Certificate Provisioning Service" or the customized certificate store name from the previous step. |
    | Container | Optional container to associate certificate store with. |
    | Client Machine | The Client Machine field is the Akamai REST API URL. This should be equal to the the "host" value from the API credentials file. |
@@ -358,7 +360,6 @@ Please refer to the **Universal Orchestrator (remote)** usage section ([PAM prov
 </details>
 
 
-
 > The content in this section can be supplemented by the [official Command documentation](https://software.keyfactor.com/Core-OnPrem/Current/Content/ReferenceGuide/Certificate%20Stores.htm?Highlight=certificate%20store).
 
 
@@ -388,10 +389,6 @@ targeting the `CertStoreFQDN` containing `Akamai` and can be further restricted 
 `Production` or `Staging`. A sample workflow for ODKG / Reenrollment scheduling for renewals can be viewed in the 
 [kf-workflow-samples repo](https://github.com/Keyfactor/kf-workflow-samples). When running the sample workflow, it will 
 assume that all certs passed to the script should schedule a Reenrollment job with their existing parameters in Akamai.
-
-
-
-</details>
 
 
 
