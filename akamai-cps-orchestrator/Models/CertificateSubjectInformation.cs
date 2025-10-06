@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Linq;
+using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
 
 namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models;
@@ -66,15 +67,20 @@ public class CertificateSubjectInformation
         var result = new CertificateSubjectInformation()
         {
             SubjectText = subjectText,
-            CommonName = x509Name.GetValueList(X509Name.CN).Cast<string>().LastOrDefault(),
-            CityLocality = x509Name.GetValueList(X509Name.L).Cast<string>().LastOrDefault(),
-            CountryRegion = x509Name.GetValueList(X509Name.C).Cast<string>().LastOrDefault(),
-            Email = x509Name.GetValueList(X509Name.E).Cast<string>().LastOrDefault(),
-            Organization = x509Name.GetValueList(X509Name.O).Cast<string>().LastOrDefault(),
-            OrganizationalUnit = x509Name.GetValueList(X509Name.OU).Cast<string>().LastOrDefault(),
-            StateProvince = x509Name.GetValueList(X509Name.ST).Cast<string>().LastOrDefault(),
+            CommonName = GetLastStringValue(x509Name, X509Name.CN),
+            CityLocality = GetLastStringValue(x509Name, X509Name.L),
+            CountryRegion = GetLastStringValue(x509Name, X509Name.C),
+            Email = GetLastStringValue(x509Name, X509Name.E),
+            Organization = GetLastStringValue(x509Name, X509Name.O),
+            OrganizationalUnit = GetLastStringValue(x509Name, X509Name.OU),
+            StateProvince = GetLastStringValue(x509Name, X509Name.ST),
         };
         
         return result;
+    }
+
+    private static string GetLastStringValue(X509Name x509Name, DerObjectIdentifier identifier)
+    {
+        return x509Name.GetValueList(identifier).OfType<string>().LastOrDefault();
     }
 }
