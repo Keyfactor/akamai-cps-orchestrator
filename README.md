@@ -299,7 +299,7 @@ the Keyfactor Command Portal
    | --------- |---------------------------------------------------------|
    | Category | Select "Akamai Certificate Provisioning Service" or the customized certificate store name from the previous step. |
    | Container | Optional container to associate certificate store with. |
-   | Client Machine | The Client Machine field is the Akamai REST API URL. This should be equal to the the "host" value from the API credentials file. |
+   | Client Machine | The Client Machine field is the Akamai REST API URL. This should be equal to the "host" value from the API credentials file. |
    | Store Path | The Akamai network the certificate will be managed from. Value can be either "Production" or "Staging". |
    | Orchestrator | Select an approved orchestrator capable of managing `Akamai` certificates. Specifically, one with the `Akamai` capability. |
    | access_token | The Akamai access_token for authentication. |
@@ -327,7 +327,7 @@ the Keyfactor Command Portal
    | --------- | ----------- |
    | Category | Select "Akamai Certificate Provisioning Service" or the customized certificate store name from the previous step. |
    | Container | Optional container to associate certificate store with. |
-   | Client Machine | The Client Machine field is the Akamai REST API URL. This should be equal to the the "host" value from the API credentials file. |
+   | Client Machine | The Client Machine field is the Akamai REST API URL. This should be equal to the "host" value from the API credentials file. |
    | Store Path | The Akamai network the certificate will be managed from. Value can be either "Production" or "Staging". |
    | Orchestrator | Select an approved orchestrator capable of managing `Akamai` certificates. Specifically, one with the `Akamai` capability. |
    | Properties.access_token | The Akamai access_token for authentication. |
