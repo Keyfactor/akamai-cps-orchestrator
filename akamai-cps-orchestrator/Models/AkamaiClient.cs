@@ -15,6 +15,7 @@
 using System;
 using System.Linq;
 using Keyfactor.Extensions.Utilities.HttpInterface;
+using Keyfactor.Extensions.Utilities.HttpInterface.Configs;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 

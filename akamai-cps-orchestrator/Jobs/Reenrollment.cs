@@ -22,6 +22,7 @@ using Microsoft.Extensions.Logging;
 using Keyfactor.Logging;
 using System.Linq;
 using Keyfactor.Extensions.Utilities.HttpInterface;
+using Keyfactor.Extensions.Utilities.HttpInterface.Exceptions;
 
 namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
 {

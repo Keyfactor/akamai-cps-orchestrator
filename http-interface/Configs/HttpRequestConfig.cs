@@ -12,16 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Net.Http.Headers;
-using System.Threading.Tasks;
-
-namespace Keyfactor.Extensions.Utilities.HttpInterface
+namespace Keyfactor.Extensions.Utilities.HttpInterface.Configs
 {
-    public class HttpServiceConfig
+    public class HttpRequestConfig
     {
         public string Accept { get; set; } = "application/json";
         public string ContentType { get; set; } = "application/json";
-        public Func<Task<AuthenticationHeaderValue>> AuthorizationDelegate { get; set; }
     }
 }

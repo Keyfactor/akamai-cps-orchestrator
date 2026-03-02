@@ -17,6 +17,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
+using Keyfactor.Extensions.Utilities.HttpInterface.Configs;
 using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Retry;

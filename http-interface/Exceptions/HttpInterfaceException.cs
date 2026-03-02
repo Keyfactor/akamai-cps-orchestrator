@@ -1,4 +1,4 @@
-// Copyright 2025 Keyfactor
+// Copyright 2023 Keyfactor
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,11 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace Keyfactor.Extensions.Utilities.HttpInterface
+using System;
+using System.Net;
+using System.Net.Http;
+
+namespace Keyfactor.Extensions.Utilities.HttpInterface.Exceptions
 {
-    public class HttpRequestConfig
+    public class HttpInterfaceException : Exception
     {
-        public string Accept { get; set; } = "application/json";
-        public string ContentType { get; set; } = "application/json";
+        public Uri RequestUri;
+        public HttpStatusCode ErrorCode;
+        public string Reason;
+
+        public HttpInterfaceException(string message, HttpResponseMessage response) : base(message)
+        {
+            RequestUri = response.RequestMessage.RequestUri;
+            ErrorCode = response.StatusCode;
+            Reason = response.ReasonPhrase;
+        }
     }
 }
