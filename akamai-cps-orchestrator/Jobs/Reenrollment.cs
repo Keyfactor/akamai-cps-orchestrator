@@ -23,6 +23,7 @@ using Keyfactor.Logging;
 using System.Linq;
 using Keyfactor.Extensions.Utilities.HttpInterface.Exceptions;
 using Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Factories;
+using Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Services;
 
 namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
 {
@@ -32,19 +33,22 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
         
         private readonly ILogger _logger;
         private readonly IAkamaiClientFactory _akamaiClientFactory;
+        private readonly ITimerService _timerService;
 
         // default constructor for production use
         public Reenrollment()
         {
             _logger = LogHandler.GetClassLogger<Reenrollment>();
             _akamaiClientFactory = new AkamaiClientFactory();
+            _timerService = new TimerService();
         }
 
         // constructor for dependency injection of logger, to allow for better logging in unit tests
-        public Reenrollment(ILogger logger, IAkamaiClientFactory akamaiClientFactory)
+        public Reenrollment(ILogger logger, IAkamaiClientFactory akamaiClientFactory, ITimerService timerService)
         {
             _logger = logger;
             _akamaiClientFactory = akamaiClientFactory;
+            _timerService = timerService;
         }
 
         public JobResult ProcessJob(ReenrollmentJobConfiguration jobConfiguration, SubmitReenrollmentCSR submitReenrollmentUpdate)
@@ -266,7 +270,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                     // wait 30 seconds before checking for processed CSR again
                     _logger.LogTrace("Akamai CSR not ready yet. Sleeping process to try again.");
                     retryCount++;
-                    System.Threading.Thread.Sleep(TimeSpan.FromSeconds(30));
+                    _timerService.DelayBySeconds(30);
                 }
                 catch (Exception e)
                 {
@@ -342,7 +346,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                     // wait 30 seconds before checking for warnings again
                     _logger.LogTrace("Akamai deployment warnings are not processed yet. Sleeping process to try again.");
                     retryCount++;
-                    System.Threading.Thread.Sleep(TimeSpan.FromSeconds(20));
+                    _timerService.DelayBySeconds(20);
                 }
                 catch (Exception e)
                 {

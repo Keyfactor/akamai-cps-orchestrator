@@ -19,6 +19,7 @@ using Keyfactor.Extensions.Utilities.HttpInterface.Exceptions;
 using Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Factories;
 using Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs;
 using Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models;
+using Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Services;
 using Keyfactor.Orchestrators.Common.Enums;
 using Keyfactor.Orchestrators.Extensions;
 using Microsoft.Extensions.Logging;
@@ -34,14 +35,12 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
     // Generated once per test class to avoid RSA key generation cost per test.
     private static readonly X509Certificate2 TestCert = CreateSelfSignedCert();
 
-    private readonly Mock<IAkamaiClientFactory> _mockFactory;
-    private readonly Mock<IAkamaiClient> _mockClient;
+    private readonly Mock<IAkamaiClientFactory> _mockFactory = new Mock<IAkamaiClientFactory>();
+    private readonly Mock<IAkamaiClient> _mockClient = new Mock<IAkamaiClient>();
+    private readonly Mock<ITimerService> _mockTimerService = new Mock<ITimerService>();
 
     public ReenrollmentTests(ITestOutputHelper output) : base(output)
     {
-        _mockFactory = new Mock<IAkamaiClientFactory>();
-        _mockClient = new Mock<IAkamaiClient>();
-
         // Default: factory successfully returns the mock client for any inputs.
         _mockFactory
             .Setup(f => f.Create(
@@ -65,7 +64,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
                 It.IsAny<string>()))
             .Throws(new Exception("Factory setup failed"));
 
-        var job = new Reenrollment(Logger, _mockFactory.Object);
+        var job = CreateReenrollment();
         var result = job.ProcessJob(MakeReenrollmentConfig(), _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
@@ -77,7 +76,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
         var config = MakeReenrollmentConfig();
         config.JobProperties.Remove("subjectText"); // required field
 
-        var job = new Reenrollment(Logger, _mockFactory.Object);
+        var job = CreateReenrollment();
         var result = job.ProcessJob(config, _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
@@ -94,7 +93,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
             .Returns(MakeCreatedEnrollment(enrollmentId: "42", changeId: "200"));
         SetupClientForHappyPath(enrollmentId: "42", changeId: "200");
 
-        var job = new Reenrollment(Logger, _mockFactory.Object);
+        var job = CreateReenrollment();
         job.ProcessJob(MakeReenrollmentConfig(enrollmentId: "42"), _ => TestCert);
 
         _mockClient.Verify(c => c.GetEnrollment("42"), Times.Once);
@@ -107,7 +106,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
             .Setup(c => c.GetEnrollment(It.IsAny<string>()))
             .Throws(new Exception("Enrollment not found"));
 
-        var job = new Reenrollment(Logger, _mockFactory.Object);
+        var job = CreateReenrollment();
         var result = job.ProcessJob(MakeReenrollmentConfig(enrollmentId: "42"), _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
@@ -125,7 +124,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
 
         SetupClientForHappyPath(enrollmentId: "42", changeId: "9002");
 
-        var job = new Reenrollment(Logger, _mockFactory.Object);
+        var job = CreateReenrollment();
         job.ProcessJob(MakeReenrollmentConfig(enrollmentId: "42"), _ => TestCert);
 
         _mockClient.Verify(c => c.DeletePendingChange("42", "9001"), Times.Once);
@@ -144,7 +143,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
             .Setup(c => c.DeletePendingChange("42", "9001"))
             .Throws(new Exception("Delete failed"));
 
-        var job = new Reenrollment(Logger, _mockFactory.Object);
+        var job = CreateReenrollment();
         var result = job.ProcessJob(MakeReenrollmentConfig(enrollmentId: "42"), _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
@@ -158,7 +157,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
             .Setup(c => c.UpdateEnrollment("42", It.IsAny<Enrollment>()))
             .Throws(new Exception("Unexpected update error"));
 
-        var job = new Reenrollment(Logger, _mockFactory.Object);
+        var job = CreateReenrollment();
         var result = job.ProcessJob(MakeReenrollmentConfig(enrollmentId: "42"), _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
@@ -175,7 +174,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
 
         SetupClientForHappyPath(enrollmentId: "99", changeId: "100");
 
-        var job = new Reenrollment(Logger, _mockFactory.Object);
+        var job = CreateReenrollment();
         job.ProcessJob(MakeReenrollmentConfig(), _ => TestCert);
 
         _mockClient.Verify(c => c.CreateEnrollment(It.IsAny<Enrollment>(), It.IsAny<string>()), Times.Once);
@@ -188,7 +187,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
             .Setup(c => c.CreateEnrollment(It.IsAny<Enrollment>(), It.IsAny<string>()))
             .Throws(MakeHttpException(HttpStatusCode.Conflict));
 
-        var job = new Reenrollment(Logger, _mockFactory.Object);
+        var job = CreateReenrollment();
         var result = job.ProcessJob(MakeReenrollmentConfig(), _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
@@ -201,7 +200,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
             .Setup(c => c.CreateEnrollment(It.IsAny<Enrollment>(), It.IsAny<string>()))
             .Throws(new Exception("API error"));
 
-        var job = new Reenrollment(Logger, _mockFactory.Object);
+        var job = CreateReenrollment();
         var result = job.ProcessJob(MakeReenrollmentConfig(), _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
@@ -219,16 +218,50 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
             .Setup(c => c.GetCSR("99", "100", It.IsAny<string>()))
             .Throws(new Exception("Unexpected CSR error"));
 
-        var job = new Reenrollment(Logger, _mockFactory.Object);
+        var job = CreateReenrollment();
         var result = job.ProcessJob(MakeReenrollmentConfig(), _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
     }
 
-    // NOTE: Testing GetCSR retry exhaustion (5 × 404 → Failure) requires Thread.Sleep(30s) × 5 = 150s.
-    // Extract the delay mechanism to an injectable interface to make this test fast.
-    // [Trait("Category", "Slow")]
-    // public void ProcessJob_WhenGetCSRConsistentlyReturnsNotFound_ReturnsFailure() { ... }
+    [Fact]
+    public void ProcessJob_WhenGetCSRReturns404OnceThenSucceeds_DelaysOnceAndContinues()
+    {
+        _mockClient
+            .Setup(c => c.CreateEnrollment(It.IsAny<Enrollment>(), It.IsAny<string>()))
+            .Returns(MakeCreatedEnrollment(enrollmentId: "99", changeId: "100"));
+        _mockClient
+            .SetupSequence(c => c.GetCSR("99", "100", It.IsAny<string>()))
+            .Throws(MakeHttpException(HttpStatusCode.NotFound))
+            .Returns("-----BEGIN CERTIFICATE REQUEST-----\nfakecsr\n-----END CERTIFICATE REQUEST-----");
+
+        var job = CreateReenrollment();
+        var result = job.ProcessJob(MakeReenrollmentConfig(), _ => TestCert);
+
+        Assert.Equal(OrchestratorJobStatusJobResult.Success, result.Result);
+        _mockTimerService.Verify(t => t.DelayBySeconds(30), Times.Once);
+    }
+
+    [Fact]
+    public void ProcessJob_WhenGetCSRAlwaysReturns404_ExhaustsRetriesAndReturnsFailure()
+    {
+        _mockClient
+            .Setup(c => c.CreateEnrollment(It.IsAny<Enrollment>(), It.IsAny<string>()))
+            .Returns(MakeCreatedEnrollment(enrollmentId: "99", changeId: "100"));
+        _mockClient
+            .SetupSequence(c => c.GetCSR("99", "100", It.IsAny<string>()))
+            .Throws(MakeHttpException(HttpStatusCode.NotFound))
+            .Throws(MakeHttpException(HttpStatusCode.NotFound))
+            .Throws(MakeHttpException(HttpStatusCode.NotFound))
+            .Throws(MakeHttpException(HttpStatusCode.NotFound))
+            .Throws(MakeHttpException(HttpStatusCode.NotFound));
+
+        var job = CreateReenrollment();
+        var result = job.ProcessJob(MakeReenrollmentConfig(), _ => TestCert);
+
+        Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
+        _mockTimerService.Verify(t => t.DelayBySeconds(30), Times.Exactly(5));
+    }
 
     // --- Post-CSR steps ---
 
@@ -242,7 +275,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
             .Setup(c => c.GetCSR("99", "100", It.IsAny<string>()))
             .Returns("-----BEGIN CERTIFICATE REQUEST-----\nfakecsr\n-----END CERTIFICATE REQUEST-----");
 
-        var job = new Reenrollment(Logger, _mockFactory.Object);
+        var job = CreateReenrollment();
         var result = job.ProcessJob(MakeReenrollmentConfig(), _ => null);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
@@ -264,7 +297,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
                 It.IsAny<string>()))
             .Throws(new Exception("Upload failed"));
 
-        var job = new Reenrollment(Logger, _mockFactory.Object);
+        var job = CreateReenrollment();
         var result = job.ProcessJob(MakeReenrollmentConfig(), _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
@@ -285,16 +318,55 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
             .Setup(c => c.AcknowledgeWarnings("99", "100"))
             .Throws(new Exception("Unexpected acknowledgement error"));
 
-        var job = new Reenrollment(Logger, _mockFactory.Object);
+        var job = CreateReenrollment();
         var result = job.ProcessJob(MakeReenrollmentConfig(), _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
     }
 
-    // NOTE: Testing AcknowledgeWarnings retry exhaustion (4 × 404 → Warning) requires Thread.Sleep(20s) × 4 = 80s.
-    // Extract the delay mechanism to an injectable interface to make this test fast.
-    // [Trait("Category", "Slow")]
-    // public void ProcessJob_WhenAcknowledgeWarningsConsistentlyReturnsNotFound_ReturnsWarning() { ... }
+    [Fact]
+    public void ProcessJob_WhenAcknowledgeWarningsReturns404OnceThenSucceeds_DelaysOnceAndReturnsSuccess()
+    {
+        _mockClient
+            .Setup(c => c.CreateEnrollment(It.IsAny<Enrollment>(), It.IsAny<string>()))
+            .Returns(MakeCreatedEnrollment(enrollmentId: "99", changeId: "100"));
+        _mockClient
+            .Setup(c => c.GetCSR("99", "100", It.IsAny<string>()))
+            .Returns("-----BEGIN CERTIFICATE REQUEST-----\nfakecsr\n-----END CERTIFICATE REQUEST-----");
+        _mockClient
+            .SetupSequence(c => c.AcknowledgeWarnings("99", "100"))
+            .Throws(MakeHttpException(HttpStatusCode.NotFound))
+            .Pass();
+
+        var job = CreateReenrollment();
+        var result = job.ProcessJob(MakeReenrollmentConfig(), _ => TestCert);
+
+        Assert.Equal(OrchestratorJobStatusJobResult.Success, result.Result);
+        _mockTimerService.Verify(t => t.DelayBySeconds(20), Times.Once);
+    }
+
+    [Fact]
+    public void ProcessJob_WhenAcknowledgeWarningsAlwaysReturns404_ExhaustsRetriesAndReturnsWarning()
+    {
+        _mockClient
+            .Setup(c => c.CreateEnrollment(It.IsAny<Enrollment>(), It.IsAny<string>()))
+            .Returns(MakeCreatedEnrollment(enrollmentId: "99", changeId: "100"));
+        _mockClient
+            .Setup(c => c.GetCSR("99", "100", It.IsAny<string>()))
+            .Returns("-----BEGIN CERTIFICATE REQUEST-----\nfakecsr\n-----END CERTIFICATE REQUEST-----");
+        _mockClient
+            .SetupSequence(c => c.AcknowledgeWarnings("99", "100"))
+            .Throws(MakeHttpException(HttpStatusCode.NotFound))
+            .Throws(MakeHttpException(HttpStatusCode.NotFound))
+            .Throws(MakeHttpException(HttpStatusCode.NotFound))
+            .Throws(MakeHttpException(HttpStatusCode.NotFound));
+
+        var job = CreateReenrollment();
+        var result = job.ProcessJob(MakeReenrollmentConfig(), _ => TestCert);
+
+        Assert.Equal(OrchestratorJobStatusJobResult.Warning, result.Result);
+        _mockTimerService.Verify(t => t.DelayBySeconds(20), Times.Exactly(4));
+    }
 
     // --- Happy paths ---
 
@@ -307,7 +379,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
 
         SetupClientForHappyPath(enrollmentId: "99", changeId: "100");
 
-        var job = new Reenrollment(Logger, _mockFactory.Object);
+        var job = CreateReenrollment();
         var result = job.ProcessJob(MakeReenrollmentConfig(), _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Success, result.Result);
@@ -323,13 +395,18 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
 
         SetupClientForHappyPath(enrollmentId: "42", changeId: "200");
 
-        var job = new Reenrollment(Logger, _mockFactory.Object);
+        var job = CreateReenrollment();
         var result = job.ProcessJob(MakeReenrollmentConfig(enrollmentId: "42"), _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Success, result.Result);
     }
 
     // --- Helpers ---
+
+    private Reenrollment CreateReenrollment()
+    {
+        return new Reenrollment(Logger, _mockFactory.Object, _mockTimerService.Object);
+    }
 
     /// Sets up the mock client for the post-enrollment steps (GetCSR, PostCertificate,
     /// AcknowledgeWarnings) to succeed, so individual tests can focus on earlier failures.
