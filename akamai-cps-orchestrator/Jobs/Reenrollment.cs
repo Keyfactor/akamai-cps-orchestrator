@@ -1,4 +1,4 @@
-﻿// Copyright 2023 Keyfactor
+﻿// Copyright 2026 Keyfactor
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,43 +21,57 @@ using Newtonsoft.Json;
 using Microsoft.Extensions.Logging;
 using Keyfactor.Logging;
 using System.Linq;
-using Keyfactor.Extensions.Utilities.HttpInterface;
 using Keyfactor.Extensions.Utilities.HttpInterface.Exceptions;
+using Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Factories;
 
 namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
 {
     public class Reenrollment : AkamaiJob, IReenrollmentJobExtension
     {
         public string ExtensionName => "Akamai";
+        
+        private readonly ILogger _logger;
+        private readonly IAkamaiClientFactory _akamaiClientFactory;
+
+        // default constructor for production use
+        public Reenrollment()
+        {
+            _logger = LogHandler.GetClassLogger<Reenrollment>();
+            _akamaiClientFactory = new AkamaiClientFactory();
+        }
+
+        // constructor for dependency injection of logger, to allow for better logging in unit tests
+        public Reenrollment(ILogger logger, IAkamaiClientFactory akamaiClientFactory)
+        {
+            _logger = logger;
+            _akamaiClientFactory = akamaiClientFactory;
+        }
 
         public JobResult ProcessJob(ReenrollmentJobConfiguration jobConfiguration, SubmitReenrollmentCSR submitReenrollmentUpdate)
         {
             JobHistoryId = jobConfiguration.JobHistoryId;
-            ILogger logger = LogHandler.GetClassLogger<Reenrollment>();
-            AkamaiClient client;
-            string enrollmentType;
+            IAkamaiClient client;
+            
             try
             {
-                logger.LogTrace("Reading store properties for Akamai auth information.");
+                _logger.LogTrace("Reading store properties for Akamai auth information.");
                 var storeProps = JsonConvert.DeserializeObject<Dictionary<string, string>>(jobConfiguration.CertificateStoreDetails.Properties);
-                AkamaiAuth auth = new AkamaiAuth(storeProps);
 
-                logger.LogTrace("Creating Akamai Client.");
-                client = new AkamaiClient(logger, jobConfiguration.CertificateStoreDetails.ClientMachine, auth);
+                _logger.LogTrace("Creating Akamai Client.");
 
-                enrollmentType = jobConfiguration.CertificateStoreDetails.StorePath;
-                logger.LogTrace($"Setting enrollment type as '{enrollmentType}'");
-                client.SetDeploymentType(enrollmentType);
+                var enrollmentType = jobConfiguration.CertificateStoreDetails.StorePath;
+                client = _akamaiClientFactory.Create(_logger, storeProps,
+                    jobConfiguration.CertificateStoreDetails.ClientMachine, enrollmentType);
             }
             catch (Exception e)
             {
-                logger.LogError("Error occurred while setting up Akamai Client.");
+                _logger.LogError("Error occurred while setting up Akamai Client.");
                 string errorMessage = FlattenException(e);
-                logger.LogError(errorMessage);
+                _logger.LogError(errorMessage);
                 return Failure(errorMessage);
             }
 
-            logger.LogTrace("Populating enrollment request information.");
+            _logger.LogTrace("Populating enrollment request information.");
             Enrollment reenrollment;
             string contractId, keyType;
             var allJobProps = jobConfiguration.JobProperties; // contains entry parameters, contact addresses - EnrollmentId, ContractId
@@ -68,11 +82,11 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                 contractId = GetRequiredValue(allJobProps, "ContractId");
                 string sans = GetRequiredValue(allJobProps, "Sans"); // ampersand split sans
                 
-                logger.LogDebug($"keyType: {keyType}, contractId: {contractId}, sans: {sans}");
+                _logger.LogDebug($"keyType: {keyType}, contractId: {contractId}, sans: {sans}");
 
-                logger.LogDebug($"Reading passed in reenrollment subject: {subject}");
+                _logger.LogDebug($"Reading passed in reenrollment subject: {subject}");
                 var subjectValues = CertificateSubjectInformation.ParseFromSubjectText(subject);
-                logger.LogDebug($"Parsed subject values: {JsonConvert.SerializeObject(subjectValues)}");
+                _logger.LogDebug($"Parsed subject values: {JsonConvert.SerializeObject(subjectValues)}");
 
                 reenrollment = new Enrollment()
                 {
@@ -90,7 +104,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                     }
                 };
 
-                logger.LogTrace("Loading contact info from job properties.");
+                _logger.LogTrace("Loading contact info from job properties.");
                 reenrollment.adminContact = new ContactInfo()
                 {
                     addressLineOne = GetRequiredValue(allJobProps, "admin-addressLineOne"),
@@ -106,7 +120,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                     region = GetRequiredValue(allJobProps, "admin-region"),
                     title = GetRequiredValue(allJobProps, "admin-title")
                 };
-                logger.LogTrace($"Admin Contact added to re-enrollment request.");
+                _logger.LogTrace($"Admin Contact added to re-enrollment request.");
                 reenrollment.org = new ContactInfo()
                 {
                     addressLineOne = GetRequiredValue(allJobProps, "org-addressLineOne"),
@@ -118,7 +132,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                     postalCode = GetRequiredValue(allJobProps, "org-postalCode"),
                     region = GetRequiredValue(allJobProps, "org-region")
                 };
-                logger.LogTrace($"Org added to re-enrollment request.");
+                _logger.LogTrace($"Org added to re-enrollment request.");
                 reenrollment.techContact = new ContactInfo()
                 {
                     addressLineOne = GetRequiredValue(allJobProps, "tech-addressLineOne"),
@@ -134,16 +148,16 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                     region = GetRequiredValue(allJobProps, "tech-region"),
                     title = GetRequiredValue(allJobProps, "tech-title")
                 };
-                logger.LogTrace($"Tech Contact added to re-enrollment request.");
+                _logger.LogTrace($"Tech Contact added to re-enrollment request.");
             }
             catch (Exception e)
             {
-                logger.LogError("Error occurred while creating Enrollment object from job parameters.");
+                _logger.LogError("Error occurred while creating Enrollment object from job parameters.");
                 string errorMessage = FlattenException(e);
-                logger.LogError(errorMessage);
+                _logger.LogError(errorMessage);
                 return Failure(errorMessage);
             }
-            logger.LogTrace("Enrollment request information finished populating.");
+            _logger.LogTrace("Enrollment request information finished populating.");
 
             // if not present as an entry parameter, need to make a new enrollment
             CreatedEnrollment enrollment;
@@ -152,7 +166,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             if (enrollmentExists && existingEnrollmentId != null)
             {
                 enrollmentId = existingEnrollmentId.ToString();
-                logger.LogDebug($"Looking for existing enrollment - {enrollmentId}");
+                _logger.LogDebug($"Looking for existing enrollment - {enrollmentId}");
                 Enrollment existingEnrollment;
                 try
                 {
@@ -160,51 +174,51 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                 }
                 catch (Exception e)
                 {
-                    logger.LogError($"Failed to find existing enrollment - {enrollmentId}");
+                    _logger.LogError($"Failed to find existing enrollment - {enrollmentId}");
                     string errorMessage = FlattenException(e);
-                    logger.LogError(errorMessage);
+                    _logger.LogError(errorMessage);
                     return Failure(errorMessage);
                 }
 
                 // use existing enrollment information, with reenrollment CSR data
                 existingEnrollment.csr = reenrollment.csr;
 
-                logger.LogDebug($"Found existing enrollment - {enrollmentId}");
+                _logger.LogDebug($"Found existing enrollment - {enrollmentId}");
                 try
                 {
                     enrollment = client.UpdateEnrollment(enrollmentId, existingEnrollment);
-                    logger.LogInformation($"Updated existing enrollment - {enrollmentId}");
+                    _logger.LogInformation($"Updated existing enrollment - {enrollmentId}");
                 }
                 catch (HttpInterfaceException e) when (e.ErrorCode == System.Net.HttpStatusCode.InternalServerError)
                 {
                     // 500 error thrown when trying to "update" existing enrollment that is in deployment process
-                    logger.LogError($"Failed to update existing enrollment - {enrollmentId}");
-                    logger.LogInformation($"Attempting to rollback existing change to restart enrollment");
+                    _logger.LogError($"Failed to update existing enrollment - {enrollmentId}");
+                    _logger.LogInformation($"Attempting to rollback existing change to restart enrollment");
                     try
                     {
                         var mostRecentChangeLocation = existingEnrollment.pendingChanges.Last().location;
                         var mostRecentChangeId = mostRecentChangeLocation.Split('/')[^1]; // last element of the location url is the Change Id
                         // delete change and try to update enrollment again
-                        logger.LogDebug($"Deleting pending change {mostRecentChangeId}");
+                        _logger.LogDebug($"Deleting pending change {mostRecentChangeId}");
                         // TODO: detect when pending only changes to log warning? or always log warning?
                         client.DeletePendingChange(enrollmentId, mostRecentChangeId);
-                        logger.LogInformation($"Deleted pending change, attempting to update enrollment again");
+                        _logger.LogInformation($"Deleted pending change, attempting to update enrollment again");
                         enrollment = client.UpdateEnrollment(enrollmentId, existingEnrollment);  // THIS DOES NOT WORK, ENROLLMENT IS GONE FOR STAGING ONLY CHANGES
-                        logger.LogInformation($"Updated existing enrollment - {enrollmentId}");
+                        _logger.LogInformation($"Updated existing enrollment - {enrollmentId}");
                     }
                     catch (Exception ex)
                     {
-                        logger.LogError("Error occurred while trying to rollback existing change and restart enrollment.");
+                        _logger.LogError("Error occurred while trying to rollback existing change and restart enrollment.");
                         string errorMessage = FlattenException(ex);
-                        logger.LogError(errorMessage);
+                        _logger.LogError(errorMessage);
                         return Failure(errorMessage);
                     }
                 }
                 catch (Exception e)
                 {
-                    logger.LogError($"Failed to update existing enrollment - {enrollmentId}");
+                    _logger.LogError($"Failed to update existing enrollment - {enrollmentId}");
                     string errorMessage = FlattenException(e);
-                    logger.LogError(errorMessage);
+                    _logger.LogError(errorMessage);
                     return Failure(errorMessage);
                 }
             }
@@ -217,25 +231,25 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                 }
                 catch (HttpInterfaceException e) when (e.ErrorCode == System.Net.HttpStatusCode.Conflict)
                 {
-                    logger.LogError($"Enrollment already exists for CN {reenrollment.csr.cn}, cannot create new enrollment.");
+                    _logger.LogError($"Enrollment already exists for CN {reenrollment.csr.cn}, cannot create new enrollment.");
                     string errorMessage = FlattenException(e);
-                    logger.LogError(errorMessage);
+                    _logger.LogError(errorMessage);
                     return Failure(errorMessage);
                 }
                 catch (Exception e)
                 {
-                    logger.LogError($"Failed to create new enrollment");
+                    _logger.LogError($"Failed to create new enrollment");
                     string errorMessage = FlattenException(e);
-                    logger.LogError(errorMessage);
+                    _logger.LogError(errorMessage);
                     return Failure(errorMessage);
                 }
                 enrollmentId = enrollment.enrollment.Split('/')[^1]; // last element of the location url is the Enrollment Id
-                logger.LogInformation($"Created new enrollment - {enrollmentId}");
+                _logger.LogInformation($"Created new enrollment - {enrollmentId}");
             }
 
             // update the enrollment and get CSR
             string changeId = enrollment.changes[0].Split('/')[^1]; // last element of the location url is the Change Id
-            logger.LogDebug("Retrieving CSR for enrollment change.");
+            _logger.LogDebug("Retrieving CSR for enrollment change.");
 
             //
             string csr = null;  
@@ -250,15 +264,15 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                 catch (HttpInterfaceException e) when (e.ErrorCode == System.Net.HttpStatusCode.NotFound)
                 {
                     // wait 30 seconds before checking for processed CSR again
-                    logger.LogTrace("Akamai CSR not ready yet. Sleeping process to try again.");
+                    _logger.LogTrace("Akamai CSR not ready yet. Sleeping process to try again.");
                     retryCount++;
                     System.Threading.Thread.Sleep(TimeSpan.FromSeconds(30));
                 }
                 catch (Exception e)
                 {
-                    logger.LogError("Error ocurred when trying to retrieve CSR. Error appears unrelated to CSR not being ready yet.");
+                    _logger.LogError("Error ocurred when trying to retrieve CSR. Error appears unrelated to CSR not being ready yet.");
                     string errorMessage = FlattenException(e);
-                    logger.LogError(errorMessage);
+                    _logger.LogError(errorMessage);
                     return Failure(errorMessage);
                 }
             }
@@ -267,22 +281,22 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             if (string.IsNullOrEmpty(csr))
             {
                 string errorMessage = $"Maximum retry count reached. CSR was not finished processing for new enrollment - {enrollmentId}";
-                logger.LogError(errorMessage);
+                _logger.LogError(errorMessage);
                 return Failure(errorMessage);
             }
 
-            logger.LogDebug("Retrieved CSR content for enrollment change.");
+            _logger.LogDebug("Retrieved CSR content for enrollment change.");
 
             // submit csr
-            logger.LogTrace("Submitting CSR to Keyfactor");
+            _logger.LogTrace("Submitting CSR to Keyfactor");
             var x509Cert = submitReenrollmentUpdate.Invoke(csr);
-            logger.LogDebug("Certificate returned from CSR enrollment.");
+            _logger.LogDebug("Certificate returned from CSR enrollment.");
 
             if (x509Cert == null)
             {
                 string errorMessage = "Certificate was not returned from Keyfactor for submitted CSR.";
-                logger.LogError(errorMessage);
-                logger.LogTrace($"Failed CSR: \n{csr}");
+                _logger.LogError(errorMessage);
+                _logger.LogTrace($"Failed CSR: \n{csr}");
                 return Failure(errorMessage);
             }
 
@@ -296,7 +310,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
 
             certContent = certContent.Replace("\r", "");
 
-            logger.LogTrace("Posting certificate to Akamai.");
+            _logger.LogTrace("Posting certificate to Akamai.");
             try
             {
                 client.PostCertificate(enrollmentId, changeId, certContent, keyType);
@@ -304,16 +318,16 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             catch (Exception e)
             {
                 string errorMessage = "Error uploading certificate to Akamai.";
-                logger.LogError(errorMessage);
-                logger.LogError(FlattenException(e));
-                logger.LogError($"Certificate of type {keyType} was not uploaded to enrollment {enrollmentId} for change {changeId}");
-                logger.LogTrace($"Failed Certificate content: \n{certContent}");
+                _logger.LogError(errorMessage);
+                _logger.LogError(FlattenException(e));
+                _logger.LogError($"Certificate of type {keyType} was not uploaded to enrollment {enrollmentId} for change {changeId}");
+                _logger.LogTrace($"Failed Certificate content: \n{certContent}");
                 return Failure(errorMessage);
             }
-            logger.LogInformation($"Certificate uploaded for enrollment - {enrollmentId}");
+            _logger.LogInformation($"Certificate uploaded for enrollment - {enrollmentId}");
 
             // akcnowledge warnings to force deployment
-            logger.LogTrace("Acknowledging warnings for finished enrollment.");
+            _logger.LogTrace("Acknowledging warnings for finished enrollment.");
             retryCount = 0;
             bool ack = false;
             while (!ack && retryCount < 4)
@@ -326,15 +340,15 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                 catch (HttpInterfaceException e) when (e.ErrorCode == System.Net.HttpStatusCode.NotFound)
                 {
                     // wait 30 seconds before checking for warnings again
-                    logger.LogTrace("Akamai deployment warnings are not processed yet. Sleeping process to try again.");
+                    _logger.LogTrace("Akamai deployment warnings are not processed yet. Sleeping process to try again.");
                     retryCount++;
                     System.Threading.Thread.Sleep(TimeSpan.FromSeconds(20));
                 }
                 catch (Exception e)
                 {
                     string errorMessage = "Error ocurred when trying to acknowledge warnings and deploy certificate.";
-                    logger.LogError(errorMessage);
-                    logger.LogError(FlattenException(e));
+                    _logger.LogError(errorMessage);
+                    _logger.LogError(FlattenException(e));
                     return Failure(errorMessage);
                 }
             }
@@ -343,12 +357,12 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             {
                 // all retries used and not successful
                 string warnMessage = "Maximum retries reached and the deployment warnings could not be acknowledged. Certificate may not be deployed.";
-                logger.LogWarning(warnMessage);
+                _logger.LogWarning(warnMessage);
                 return Warning(warnMessage);
             }
             else
             {
-                logger.LogInformation($"Warnings acknowleged for enrollment - {enrollmentId}");
+                _logger.LogInformation($"Warnings acknowleged for enrollment - {enrollmentId}");
                 return Success();
             }
         }

@@ -1,4 +1,4 @@
-﻿// Copyright 2023 Keyfactor
+﻿// Copyright 2026 Keyfactor
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,23 @@ using Newtonsoft.Json;
 
 namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
 {
-    public class AkamaiClient
+    public interface IAkamaiClient
+    {
+        CertificateInfo GetCertificate(string enrollmentId);
+        Enrollment[] GetEnrollments();
+        Enrollment GetEnrollment(string enrollmentId);
+        ChangeHistory GetEnrollmentChangeHistory(string enrollmentId);
+        CreatedEnrollment CreateEnrollment(Enrollment newEnrollment, string contractId);
+        CreatedEnrollment UpdateEnrollment(string enrollmentId, Enrollment enrollment);
+        string GetCSR(string enrollmentId, string changeId, string keyType);
+        void DeletePendingChange(string enrollmentId, string changeId);
+        void PostCertificate(string enrollmentId, string changeId, string certificate, string keyAlgorithm, string trustChain = null);
+        void DeployCertificate(string enrollmentId, string changeId);
+        void AcknowledgeWarnings(string enrollmentId, string changeId);
+        DeploymentType GetDeploymentType();
+    }
+
+    public class AkamaiClient : IAkamaiClient
     {
         private ILogger _logger;
         private HttpInterface _http;
@@ -33,30 +49,23 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
 
         public string Hostname;
         public bool IsProduction = false;
+        private readonly DeploymentType _deploymentType;
 
-        public AkamaiClient(ILogger logger, string clientMachine, AkamaiAuth auth)
+        public AkamaiClient(ILogger logger, string clientMachine, DeploymentType deploymentType, AkamaiAuth auth)
         {
-            _logger = logger;
             Hostname = clientMachine;
-
+            
+            _logger = logger;
             _auth = auth;
             _http = new HttpInterface(_logger, _auth, Hostname, useSSL: true);
+            
+            IsProduction = deploymentType == DeploymentType.Production;
+            _deploymentType = deploymentType;
         }
 
-        public void SetDeploymentType(string storePath)
+        public DeploymentType GetDeploymentType()
         {
-            if (storePath == Constants.StorePaths.Production)
-            {
-                IsProduction = true;
-            }
-            else if (storePath == Constants.StorePaths.Staging)
-            {
-                IsProduction = false;
-            }
-            else
-            {
-                throw new ArgumentException($"Store path {storePath} did not match either '{Constants.StorePaths.Production}' or '{Constants.StorePaths.Staging}'");
-            }
+            return _deploymentType;
         }
 
         public CertificateInfo GetCertificate(string enrollmentId)
