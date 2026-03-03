@@ -37,7 +37,7 @@ public class AkamaiAuthTests
         var path = "path";
 
         var expectedAuthHeader =
-            "EG1-HMAC-SHA256 client_token=bar;access_token=baz;timestamp=20250513T10:28:17+0000;nonce=test-nonce;signature=w9yggT3UJhAHVCFc+nMv/2D7UTmKyWCq1cWy65JQlH4=";
+            "EG1-HMAC-SHA256 client_token=bar;access_token=baz;timestamp=20250513T14:28:17+0000;nonce=test-nonce;signature=B2M8OBYTcTDfvZQ2hMKMIZXdO9unVaRHQqAyo/a3YGA=";
         
         var auth = new AkamaiAuth(properties, _authContext);
         var result = auth.GenerateAuthHeader(requestMethod, host, path);
@@ -62,7 +62,7 @@ public class AkamaiAuthTests
         var path = "path";
 
         var expectedAuthHeader =
-            "EG1-HMAC-SHA256 client_token=bar;access_token=baz;timestamp=20250513T10:28:17+0000;nonce=test-nonce;signature=w9yggT3UJhAHVCFc+nMv/2D7UTmKyWCq1cWy65JQlH4=";
+            "EG1-HMAC-SHA256 client_token=bar;access_token=baz;timestamp=20250513T14:28:17+0000;nonce=test-nonce;signature=B2M8OBYTcTDfvZQ2hMKMIZXdO9unVaRHQqAyo/a3YGA=";
         
         var auth = new AkamaiAuth(properties, _authContext);
         var result = auth.GenerateAuthHeader(requestMethod, host, path, requestBody);
@@ -85,7 +85,7 @@ public class AkamaiAuthTests
 
         const string requestBody = "fizzbuzz";
 
-        const string expectedAuthHeader = "EG1-HMAC-SHA256 client_token=bar;access_token=baz;timestamp=20250513T10:28:17+0000;nonce=test-nonce;signature=HTz70YZrEn7Yw/y/mdw5GyF3c/GPtE2vzKmsy8baxj8=";
+        const string expectedAuthHeader = "EG1-HMAC-SHA256 client_token=bar;access_token=baz;timestamp=20250513T14:28:17+0000;nonce=test-nonce;signature=XnbdZjMdsQVm5TkZEJ4enhdmFvFb0b98iFUMVwyi7LM=";
         
         var auth = new AkamaiAuth(properties, _authContext);
         var result = auth.GenerateAuthHeader(requestMethod, host, path, requestBody);
@@ -95,6 +95,6 @@ public class AkamaiAuthTests
 
 public class FakeAkamaiAuthContext : IAkamaiAuthContext
 {
-    public DateTime GetTime() => DateTime.Parse("2025-05-13T14:28:17.1234Z");
+    public DateTime GetTime() => DateTime.Parse("2025-05-13T14:28:17.1234Z").ToUniversalTime();
     public string GetNonce() => "test-nonce";
 }
