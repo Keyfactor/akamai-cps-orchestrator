@@ -64,7 +64,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
                 It.IsAny<string>()))
             .Throws(new Exception("Factory setup failed"));
 
-        var job = CreateReenrollment();
+        var job = GetReenrollmentClass();
         var result = job.ProcessJob(MakeReenrollmentConfig(), _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
@@ -76,7 +76,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
         var config = MakeReenrollmentConfig();
         config.JobProperties.Remove("subjectText"); // required field
 
-        var job = CreateReenrollment();
+        var job = GetReenrollmentClass();
         var result = job.ProcessJob(config, _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
@@ -93,7 +93,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
             .Returns(MakeCreatedEnrollment(enrollmentId: "42", changeId: "200"));
         SetupClientForHappyPath(enrollmentId: "42", changeId: "200");
 
-        var job = CreateReenrollment();
+        var job = GetReenrollmentClass();
         job.ProcessJob(MakeReenrollmentConfig(enrollmentId: "42"), _ => TestCert);
 
         _mockClient.Verify(c => c.GetEnrollment("42"), Times.Once);
@@ -106,7 +106,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
             .Setup(c => c.GetEnrollment(It.IsAny<string>()))
             .Throws(new Exception("Enrollment not found"));
 
-        var job = CreateReenrollment();
+        var job = GetReenrollmentClass();
         var result = job.ProcessJob(MakeReenrollmentConfig(enrollmentId: "42"), _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
@@ -124,7 +124,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
 
         SetupClientForHappyPath(enrollmentId: "42", changeId: "9002");
 
-        var job = CreateReenrollment();
+        var job = GetReenrollmentClass();
         job.ProcessJob(MakeReenrollmentConfig(enrollmentId: "42"), _ => TestCert);
 
         _mockClient.Verify(c => c.DeletePendingChange("42", "9001"), Times.Once);
@@ -143,7 +143,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
             .Setup(c => c.DeletePendingChange("42", "9001"))
             .Throws(new Exception("Delete failed"));
 
-        var job = CreateReenrollment();
+        var job = GetReenrollmentClass();
         var result = job.ProcessJob(MakeReenrollmentConfig(enrollmentId: "42"), _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
@@ -157,7 +157,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
             .Setup(c => c.UpdateEnrollment("42", It.IsAny<Enrollment>()))
             .Throws(new Exception("Unexpected update error"));
 
-        var job = CreateReenrollment();
+        var job = GetReenrollmentClass();
         var result = job.ProcessJob(MakeReenrollmentConfig(enrollmentId: "42"), _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
@@ -174,7 +174,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
 
         SetupClientForHappyPath(enrollmentId: "99", changeId: "100");
 
-        var job = CreateReenrollment();
+        var job = GetReenrollmentClass();
         job.ProcessJob(MakeReenrollmentConfig(), _ => TestCert);
 
         _mockClient.Verify(c => c.CreateEnrollment(It.IsAny<Enrollment>(), It.IsAny<string>()), Times.Once);
@@ -187,7 +187,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
             .Setup(c => c.CreateEnrollment(It.IsAny<Enrollment>(), It.IsAny<string>()))
             .Throws(MakeHttpException(HttpStatusCode.Conflict));
 
-        var job = CreateReenrollment();
+        var job = GetReenrollmentClass();
         var result = job.ProcessJob(MakeReenrollmentConfig(), _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
@@ -200,7 +200,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
             .Setup(c => c.CreateEnrollment(It.IsAny<Enrollment>(), It.IsAny<string>()))
             .Throws(new Exception("API error"));
 
-        var job = CreateReenrollment();
+        var job = GetReenrollmentClass();
         var result = job.ProcessJob(MakeReenrollmentConfig(), _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
@@ -218,7 +218,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
             .Setup(c => c.GetCSR("99", "100", It.IsAny<string>()))
             .Throws(new Exception("Unexpected CSR error"));
 
-        var job = CreateReenrollment();
+        var job = GetReenrollmentClass();
         var result = job.ProcessJob(MakeReenrollmentConfig(), _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
@@ -235,7 +235,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
             .Throws(MakeHttpException(HttpStatusCode.NotFound))
             .Returns("-----BEGIN CERTIFICATE REQUEST-----\nfakecsr\n-----END CERTIFICATE REQUEST-----");
 
-        var job = CreateReenrollment();
+        var job = GetReenrollmentClass();
         var result = job.ProcessJob(MakeReenrollmentConfig(), _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Success, result.Result);
@@ -256,7 +256,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
             .Throws(MakeHttpException(HttpStatusCode.NotFound))
             .Throws(MakeHttpException(HttpStatusCode.NotFound));
 
-        var job = CreateReenrollment();
+        var job = GetReenrollmentClass();
         var result = job.ProcessJob(MakeReenrollmentConfig(), _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
@@ -275,7 +275,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
             .Setup(c => c.GetCSR("99", "100", It.IsAny<string>()))
             .Returns("-----BEGIN CERTIFICATE REQUEST-----\nfakecsr\n-----END CERTIFICATE REQUEST-----");
 
-        var job = CreateReenrollment();
+        var job = GetReenrollmentClass();
         var result = job.ProcessJob(MakeReenrollmentConfig(), _ => null);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
@@ -297,7 +297,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
                 It.IsAny<string>()))
             .Throws(new Exception("Upload failed"));
 
-        var job = CreateReenrollment();
+        var job = GetReenrollmentClass();
         var result = job.ProcessJob(MakeReenrollmentConfig(), _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
@@ -318,7 +318,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
             .Setup(c => c.AcknowledgeWarnings("99", "100"))
             .Throws(new Exception("Unexpected acknowledgement error"));
 
-        var job = CreateReenrollment();
+        var job = GetReenrollmentClass();
         var result = job.ProcessJob(MakeReenrollmentConfig(), _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
@@ -338,7 +338,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
             .Throws(MakeHttpException(HttpStatusCode.NotFound))
             .Pass();
 
-        var job = CreateReenrollment();
+        var job = GetReenrollmentClass();
         var result = job.ProcessJob(MakeReenrollmentConfig(), _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Success, result.Result);
@@ -361,7 +361,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
             .Throws(MakeHttpException(HttpStatusCode.NotFound))
             .Throws(MakeHttpException(HttpStatusCode.NotFound));
 
-        var job = CreateReenrollment();
+        var job = GetReenrollmentClass();
         var result = job.ProcessJob(MakeReenrollmentConfig(), _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Warning, result.Result);
@@ -379,7 +379,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
 
         SetupClientForHappyPath(enrollmentId: "99", changeId: "100");
 
-        var job = CreateReenrollment();
+        var job = GetReenrollmentClass();
         var result = job.ProcessJob(MakeReenrollmentConfig(), _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Success, result.Result);
@@ -395,15 +395,124 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
 
         SetupClientForHappyPath(enrollmentId: "42", changeId: "200");
 
-        var job = CreateReenrollment();
+        var job = GetReenrollmentClass();
         var result = job.ProcessJob(MakeReenrollmentConfig(enrollmentId: "42"), _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Success, result.Result);
     }
 
+    // --- Deployment network ---
+
+    [Fact]
+    public void ProcessJob_WhenDeploymentNetworkMissing_DefaultsToStandardTls()
+    {
+        Enrollment capturedEnrollment = null;
+        _mockClient
+            .Setup(c => c.CreateEnrollment(It.IsAny<Enrollment>(), It.IsAny<string>()))
+            .Callback<Enrollment, string>((e, _) => capturedEnrollment = e)
+            .Returns(MakeCreatedEnrollment(enrollmentId: "99", changeId: "100"));
+        SetupClientForHappyPath(enrollmentId: "99", changeId: "100");
+
+        // MakeReenrollmentConfig has no "deployment-network" key — backward compat case.
+        var job = GetReenrollmentClass();
+        job.ProcessJob(MakeReenrollmentConfig(), _ => TestCert);
+
+        Assert.Equal("standard-tls", capturedEnrollment.networkConfiguration.secureNetwork);
+    }
+
+    [Fact]
+    public void ProcessJob_WhenDeploymentNetworkIsNull_DefaultsToStandardTls()
+    {
+        Enrollment capturedEnrollment = null;
+        _mockClient
+            .Setup(c => c.CreateEnrollment(It.IsAny<Enrollment>(), It.IsAny<string>()))
+            .Callback<Enrollment, string>((e, _) => capturedEnrollment = e)
+            .Returns(MakeCreatedEnrollment(enrollmentId: "99", changeId: "100"));
+        SetupClientForHappyPath(enrollmentId: "99", changeId: "100");
+
+        var config = MakeReenrollmentConfig();
+        config.JobProperties["deployment-network"] = null;
+
+        var job = GetReenrollmentClass();
+        job.ProcessJob(config, _ => TestCert);
+
+        Assert.Equal("standard-tls", capturedEnrollment.networkConfiguration.secureNetwork);
+    }
+
+    [Fact]
+    public void ProcessJob_WhenDeploymentNetworkIsStandardTls_SetsStandardTls()
+    {
+        Enrollment capturedEnrollment = null;
+        _mockClient
+            .Setup(c => c.CreateEnrollment(It.IsAny<Enrollment>(), It.IsAny<string>()))
+            .Callback<Enrollment, string>((e, _) => capturedEnrollment = e)
+            .Returns(MakeCreatedEnrollment(enrollmentId: "99", changeId: "100"));
+        SetupClientForHappyPath(enrollmentId: "99", changeId: "100");
+
+        var config = MakeReenrollmentConfig();
+        config.JobProperties["deployment-network"] = "Standard TLS";
+
+        var job = GetReenrollmentClass();
+        job.ProcessJob(config, _ => TestCert);
+
+        Assert.Equal("standard-tls", capturedEnrollment.networkConfiguration.secureNetwork);
+    }
+
+    [Fact]
+    public void ProcessJob_WhenDeploymentNetworkIsEnhancedTls_SetsEnhancedTls()
+    {
+        Enrollment capturedEnrollment = null;
+        _mockClient
+            .Setup(c => c.CreateEnrollment(It.IsAny<Enrollment>(), It.IsAny<string>()))
+            .Callback<Enrollment, string>((e, _) => capturedEnrollment = e)
+            .Returns(MakeCreatedEnrollment(enrollmentId: "99", changeId: "100"));
+        SetupClientForHappyPath(enrollmentId: "99", changeId: "100");
+
+        var config = MakeReenrollmentConfig();
+        config.JobProperties["deployment-network"] = "Enhanced TLS";
+
+        var job = GetReenrollmentClass();
+        job.ProcessJob(config, _ => TestCert);
+
+        Assert.Equal("enhanced-tls", capturedEnrollment.networkConfiguration.secureNetwork);
+    }
+
+    [Fact]
+    public void ProcessJob_WhenDeploymentNetworkIsInvalidValue_ReturnsFailure()
+    {
+        var config = MakeReenrollmentConfig();
+        // this should never happen but test the code path anyway
+        config.JobProperties["deployment-network"] = "Ultra TLS";
+
+        var job = GetReenrollmentClass();
+        var result = job.ProcessJob(config, _ => TestCert);
+
+        Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
+    }
+
+    [Fact]
+    public void ProcessJob_WhenUpdatingEnrollmentWithEnhancedTls_SetsEnhancedTlsOnExistingEnrollment()
+    {
+        Enrollment capturedEnrollment = null;
+        _mockClient.Setup(c => c.GetEnrollment("42")).Returns(MakeExistingEnrollment("42"));
+        _mockClient
+            .Setup(c => c.UpdateEnrollment("42", It.IsAny<Enrollment>()))
+            .Callback<string, Enrollment>((_, e) => capturedEnrollment = e)
+            .Returns(MakeCreatedEnrollment(enrollmentId: "42", changeId: "200"));
+        SetupClientForHappyPath(enrollmentId: "42", changeId: "200");
+
+        var config = MakeReenrollmentConfig(enrollmentId: "42");
+        config.JobProperties["deployment-network"] = "Enhanced TLS";
+
+        var job = GetReenrollmentClass();
+        job.ProcessJob(config, _ => TestCert);
+
+        Assert.Equal("enhanced-tls", capturedEnrollment.networkConfiguration.secureNetwork);
+    }
+
     // --- Helpers ---
 
-    private Reenrollment CreateReenrollment()
+    private Reenrollment GetReenrollmentClass()
     {
         return new Reenrollment(Logger, _mockFactory.Object, _mockTimerService.Object);
     }

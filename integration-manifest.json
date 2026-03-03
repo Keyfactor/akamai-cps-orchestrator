@@ -526,6 +526,20 @@
               },
               "DefaultValue": "SET-DEFAULT",
               "Description": "Required field for Akamai Tech contact."
+            },
+            {
+              "Name": "deployment-network",
+              "DisplayName": "Deployment Network",
+              "Type": "MultipleChoice",
+              "RequiredWhen": {
+                "HasPrivateKey": false,
+                "OnAdd": false,
+                "OnRemove": false,
+                "OnReenrollment": true
+              },
+              "Options": "Standard TLS,Enhanced TLS",
+              "DefaultValue": "Standard TLS",
+              "Description": "Required field for Deployment Network."
             }
           ],
           "PasswordOptions": {

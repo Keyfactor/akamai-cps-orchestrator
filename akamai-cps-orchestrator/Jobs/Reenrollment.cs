@@ -155,6 +155,18 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                     title = GetRequiredValue(allJobProps, "tech-title")
                 };
                 _logger.LogTrace($"Tech Contact added to re-enrollment request.");
+
+                // Resolve optional deployment network entry parameter.
+                // NOTE: If the parameter is absent (e.g. pre-existing job templates created before this feature),
+                // we default to "standard-tls" for backward compatibility. This means Enhanced TLS
+                // enrollments re-enrolled via an old job template would be silently downgraded.
+                if (allJobProps.TryGetValue("deployment-network", out object deploymentNetworkRaw)
+                    && deploymentNetworkRaw != null
+                    && !string.IsNullOrWhiteSpace(deploymentNetworkRaw.ToString()))
+                {
+                    reenrollment.networkConfiguration.secureNetwork = ParseSecureNetwork(deploymentNetworkRaw.ToString());
+                }
+                _logger.LogDebug($"Network deployment type: {reenrollment.networkConfiguration.secureNetwork}");
             }
             catch (Exception e)
             {
@@ -186,8 +198,9 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                     return Failure(errorMessage);
                 }
 
-                // use existing enrollment information, with reenrollment CSR data
+                // use existing enrollment information, with reenrollment CSR and network data
                 existingEnrollment.csr = reenrollment.csr;
+                existingEnrollment.networkConfiguration.secureNetwork = reenrollment.networkConfiguration.secureNetwork;
 
                 _logger.LogDebug($"Found existing enrollment - {enrollmentId}");
                 try
@@ -382,6 +395,16 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                 throw new ArgumentException(error);
             }
             return dict[key].ToString();
+        }
+
+        private static string ParseSecureNetwork(string displayValue)
+        {
+            return displayValue switch
+            {
+                "Standard TLS" => "standard-tls",
+                "Enhanced TLS"  => "enhanced-tls",
+                _ => throw new ArgumentException($"Unrecognized deployment network '{displayValue}'. Expected 'Standard TLS' or 'Enhanced TLS'.")
+            };
         }
     }
 }
