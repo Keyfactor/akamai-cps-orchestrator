@@ -61,6 +61,8 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             
             IsProduction = deploymentType == DeploymentType.Production;
             _deploymentType = deploymentType;
+            
+            logger.LogDebug("Initialized AkamaiClient with hostname {Hostname} for deployment type {DeploymentType}", Hostname, deploymentType);
         }
 
         public DeploymentType GetDeploymentType()

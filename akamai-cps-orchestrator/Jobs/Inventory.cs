@@ -60,6 +60,8 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
 
                 enrollmentType = jobConfiguration.CertificateStoreDetails.StorePath;
                 client = _akamaiClientFactory.Create(_logger, storeProps, jobConfiguration.CertificateStoreDetails.ClientMachine, enrollmentType);
+                
+                _logger.LogDebug("Successfully created Akamai client");
             }
             catch (Exception e)
             {
