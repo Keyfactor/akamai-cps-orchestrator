@@ -55,6 +55,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
         {
             JobHistoryId = jobConfiguration.JobHistoryId;
             IAkamaiClient client;
+            bool secureNetworkMismatch = false;
             
             try
             {
@@ -200,7 +201,18 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
 
                 // use existing enrollment information, with reenrollment CSR and network data
                 existingEnrollment.csr = reenrollment.csr;
-                existingEnrollment.networkConfiguration.secureNetwork = reenrollment.networkConfiguration.secureNetwork;
+                
+                // Akamai does not allow updates to the secure network type, so log warning that enrollment will preserve
+                // existing secure network type, and that a new enrollment would be required to update the network type.
+                if (existingEnrollment.networkConfiguration.secureNetwork !=
+                    reenrollment.networkConfiguration.secureNetwork)
+                {
+                    
+                    _logger.LogWarning("Deployment network type cannot be updated on existing enrollment. Enrollment will preserve existing network type of " +
+                        $"{existingEnrollment.networkConfiguration.secureNetwork}. A new enrollment is required to update the deployment network type.");
+
+                    secureNetworkMismatch = true;
+                }
 
                 _logger.LogDebug($"Found existing enrollment - {enrollmentId}");
                 try
@@ -379,11 +391,16 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                 _logger.LogWarning(warnMessage);
                 return Warning(warnMessage);
             }
-            else
+            
+            if (secureNetworkMismatch)
             {
-                _logger.LogInformation($"Warnings acknowleged for enrollment - {enrollmentId}");
-                return Success();
+                string warnMessage = "Certificate was deployed, but the deployment network type could not be updated if it was different from the original enrollment. Enrollment preserved original network type.";
+                _logger.LogWarning(warnMessage);
+                return Warning(warnMessage);
             }
+            
+            _logger.LogInformation($"Warnings acknowleged for enrollment - {enrollmentId}");
+            return Success();
         }
 
         private string GetRequiredValue(Dictionary<string, object> dict, string key)

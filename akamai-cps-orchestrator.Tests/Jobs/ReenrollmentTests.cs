@@ -490,11 +490,17 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
         Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
     }
 
-    [Fact]
-    public void ProcessJob_WhenUpdatingEnrollmentWithEnhancedTls_SetsEnhancedTlsOnExistingEnrollment()
+    [Theory]
+    [InlineData("enhanced-tls", "Standard TLS")]
+    [InlineData("standard-tls", "Enhanced TLS")]
+    public void ProcessJob_WhenUpdatingEnrollment_ReenrollmentNetworkNotEqual_PreservesExistingNetwork_ReturnsWarning(string existingNetwork, string reenrollmentNetwork)
     {
         Enrollment capturedEnrollment = null;
-        _mockClient.Setup(c => c.GetEnrollment("42")).Returns(MakeExistingEnrollment("42"));
+        
+        var existingEnrollment = MakeExistingEnrollment("42");
+        existingEnrollment.networkConfiguration.secureNetwork = existingNetwork;
+        
+        _mockClient.Setup(c => c.GetEnrollment("42")).Returns(existingEnrollment);
         _mockClient
             .Setup(c => c.UpdateEnrollment("42", It.IsAny<Enrollment>()))
             .Callback<string, Enrollment>((_, e) => capturedEnrollment = e)
@@ -502,12 +508,41 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
         SetupClientForHappyPath(enrollmentId: "42", changeId: "200");
 
         var config = MakeReenrollmentConfig(enrollmentId: "42");
-        config.JobProperties["deployment-network"] = "Enhanced TLS";
+        config.JobProperties["deployment-network"] = reenrollmentNetwork;
 
         var job = GetReenrollmentClass();
-        job.ProcessJob(config, _ => TestCert);
+        var result = job.ProcessJob(config, _ => TestCert);
 
-        Assert.Equal("enhanced-tls", capturedEnrollment.networkConfiguration.secureNetwork);
+        Assert.Equal(existingNetwork, capturedEnrollment.networkConfiguration.secureNetwork);
+        Assert.Equal(OrchestratorJobStatusJobResult.Warning, result.Result);
+        Assert.Equal("Certificate was deployed, but the deployment network type could not be updated if it was different from the original enrollment. Enrollment preserved original network type.", result.FailureMessage);
+    }
+    
+    [Theory]
+    [InlineData("enhanced-tls", "Enhanced TLS")]
+    [InlineData("standard-tls", "Standard TLS")]
+    public void ProcessJob_WhenUpdatingEnrollment_ReenrollmentNetworkEqual_ReturnsSuccess(string existingNetwork, string reenrollmentNetwork)
+    {
+        Enrollment capturedEnrollment = null;
+        
+        var existingEnrollment = MakeExistingEnrollment("42");
+        existingEnrollment.networkConfiguration.secureNetwork = existingNetwork;
+        
+        _mockClient.Setup(c => c.GetEnrollment("42")).Returns(existingEnrollment);
+        _mockClient
+            .Setup(c => c.UpdateEnrollment("42", It.IsAny<Enrollment>()))
+            .Callback<string, Enrollment>((_, e) => capturedEnrollment = e)
+            .Returns(MakeCreatedEnrollment(enrollmentId: "42", changeId: "200"));
+        SetupClientForHappyPath(enrollmentId: "42", changeId: "200");
+
+        var config = MakeReenrollmentConfig(enrollmentId: "42");
+        config.JobProperties["deployment-network"] = reenrollmentNetwork;
+
+        var job = GetReenrollmentClass();
+        var result = job.ProcessJob(config, _ => TestCert);
+
+        Assert.Equal(existingNetwork, capturedEnrollment.networkConfiguration.secureNetwork);
+        Assert.Equal(OrchestratorJobStatusJobResult.Success, result.Result);
     }
 
     // --- Helpers ---
