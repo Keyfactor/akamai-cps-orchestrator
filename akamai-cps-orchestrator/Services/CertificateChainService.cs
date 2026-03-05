@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using Keyfactor.Logging;
+using Keyfactor.PKI.CryptographicObjects;
 using Keyfactor.PKI.Enums;
 using Keyfactor.PKI.X509;
 using Microsoft.Extensions.Logging;
@@ -19,6 +20,12 @@ public class CertificateChainService : ICertificateChainService
 {
     private readonly ILogger _logger = LogHandler.GetClassLogger<CertificateChainService>();
 
+    /// <summary>
+    /// Builds a certificate collection containing the provided end entity certificate and its chain certificates, if available. If an error occurs during chain building, logs a warning and returns a collection with just the end entity certificate.
+    /// NOTE: The ChainBuilder may have issues getting the trust store certificates on macOS. This does seem to work fine on Windows / Linux.
+    /// </summary>
+    /// <param name="certificate"></param>
+    /// <returns></returns>
     public CertificateCollection? BuildCertificateCollection(X509Certificate certificate)
     {
         try
@@ -39,13 +46,7 @@ public class CertificateChainService : ICertificateChainService
                 "Successfully built certificate chain for certificate with serial number {thumbprint}. Certificates count: {certificatesCount}, Chain count: {chainLength}",
                 certificate.SerialNumber, chain.Certificates.Count(), chain.ChainCertificates.Count());
 
-            for (var i = 0; i < chain.ChainCertificates.Count(); i++)
-            {
-                var element = chain.ChainCertificates.ElementAt(i);
-                _logger.LogTrace(
-                    "ChainCertificate element {index} in chain has subject DN {subject} and thumbprint {thumbprint}",
-                    i + 1, element.SubjectDN, element.SerialNumber);
-            }
+            LogChainContents(chain);
 
             return new CertificateCollection
             {
@@ -63,6 +64,29 @@ public class CertificateChainService : ICertificateChainService
                 EndEntityCert = certificate,
                 ChainCerts = null
             };
+        }
+    }
+
+    /// <summary>
+    /// Log the contents of the CertificateChain at the Trace level, including subject DN and thumbprint for each certificate in both the Certificates and ChainCertificates collections.
+    /// </summary>
+    /// <param name="chain"></param>
+    private void LogChainContents(CertificateChain chain)
+    {
+        for (var i = 0; i < chain.Certificates.Count(); i++)
+        {
+            var element = chain.Certificates.ElementAt(i);
+            _logger.LogTrace(
+                "Certificate element {index} in chain has subject DN {subject} and thumbprint {thumbprint}",
+                i + 1, element.SubjectDN, element.SerialNumber);
+        }
+            
+        for (var i = 0; i < chain.ChainCertificates.Count(); i++)
+        {
+            var element = chain.ChainCertificates.ElementAt(i);
+            _logger.LogTrace(
+                "ChainCertificate element {index} in chain has subject DN {subject} and thumbprint {thumbprint}",
+                i + 1, element.SubjectDN, element.SerialNumber);
         }
     }
 }
