@@ -35,7 +35,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
         // default constructor for production use
         public Inventory()
         {
-            _logger = LogHandler.GetClassLogger<Reenrollment>();
+            _logger = LogHandler.GetClassLogger<Inventory>();
             _akamaiClientFactory = new AkamaiClientFactory();
         }
 

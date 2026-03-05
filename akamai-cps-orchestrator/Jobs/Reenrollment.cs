@@ -169,8 +169,6 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                 _logger.LogError(e, "Unexpected error acknowledging deployment warnings for enrollment {enrollmentId}.", enrollmentId);
                 return Failure(FlattenException(e));
             }
-            
-            _logger.LogInformation("Deployment warnings acknowledged for enrollment {enrollmentId}.", enrollmentId);
 
             // Return result — check for known non-fatal conditions before declaring success.
             StringBuilder warnMessageBuilder = new ();
@@ -182,9 +180,13 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             {
                 warnMessageBuilder.AppendLine("Certificate was deployed, but the deployment network type could not be updated if it was different from the original enrollment. Enrollment preserved original network type.");
             }
+            
             if (!ack)
             {
                 warnMessageBuilder.AppendLine("Maximum retries reached and the deployment warnings could not be acknowledged. Certificate may not be deployed.");
+            }
+            else {
+                _logger.LogInformation("Deployment warnings acknowledged for enrollment {enrollmentId}.", enrollmentId);
             }
             
             if (warnMessageBuilder.Length > 0)

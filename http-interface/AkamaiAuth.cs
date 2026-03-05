@@ -36,7 +36,7 @@ namespace Keyfactor.Extensions.Utilities.HttpInterface
         private readonly IAkamaiAuthContext _authContext;
         public readonly string AuthType = "EG1-HMAC-SHA256";
 
-        public AkamaiAuth(Dictionary<string, string> jobProperties, IAkamaiAuthContext authContext = null)
+        public AkamaiAuth(Dictionary<string, string> jobProperties, IAkamaiAuthContext? authContext = null)
         {
             _clientSecret = jobProperties["client_secret"];
             _clientToken = jobProperties["client_token"];
@@ -44,7 +44,7 @@ namespace Keyfactor.Extensions.Utilities.HttpInterface
             _authContext = authContext ?? new AkamaiAuthContext();
         }
 
-        public AuthenticationHeaderValue GenerateAuthHeader(string requestMethod, string host, string path, string requestBody = null)
+        public AuthenticationHeaderValue GenerateAuthHeader(string requestMethod, string host, string path, string? requestBody = null)
         {
             string timestamp = _authContext.GetTime().ToString("yyyyMMddTHH:mm:ss+0000");
             string nonce = _authContext.GetNonce();
@@ -55,7 +55,7 @@ namespace Keyfactor.Extensions.Utilities.HttpInterface
             // Auth Header signing key is the signature from signing the timestamp with client secret
             string signingKey = Convert.ToBase64String(SignData_HMAC_SHA256(timestamp, Encoding.UTF8.GetBytes(_clientSecret)));
 
-            byte[] requestBodyHash = null;
+            byte[]? requestBodyHash = null;
             if (!string.IsNullOrWhiteSpace(requestBody))
             {
                 requestBodyHash = SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(requestBody));

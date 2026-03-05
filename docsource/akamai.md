@@ -60,7 +60,7 @@ If the deployment network for an enrollment needs to be changed, a new enrollmen
 A new feature introduced in 2.0.0 of the Akamai CPS Orchestrator is the ability to build the trust chain of the enrolled certificate and add this to the Akamai trust chain for the certificate.
 
 Currently, only the leaf certificate is returned from Keyfactor Command after enrolling a CSR, so the orchestrator will attempt to build the trust chain with two separate methods:
-- Retieving the intermediate and root certificates using the AIA information in the leaf certificate
+- Retrieving the intermediate and root certificates using the AIA information in the leaf certificate
 - Searching the trust store of the system running the orchestrator for matching intermediate and root certificates (both must be found in order to build the chain)
 
 If the trust chain cannot be built using either of these methods, the orchestrator will still complete the enrollment, but a warning message will be returned indicating that the trust chain could not be built. Please ensure that the intermediate and root certificates are part of your system's trust store or have publicly available AIA information to allow the orchestrator to build the trust chain successfully.
