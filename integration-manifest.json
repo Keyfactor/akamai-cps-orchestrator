@@ -11,7 +11,7 @@
   "description": "The Akamai Certificate Provisioning System (CPS) Orchestrator is capable of inventorying existing certificates on the Akamai platform, and performing enrollments and renewals of certificates with keys generated on the Akamai system.",
   "about": {
     "orchestrator": {
-      "UOFramework": "10.1",
+      "UOFramework": "12.3",
       "pam_support": false,
       "win": {
         "supportsCreateStore": false,
@@ -526,6 +526,20 @@
               },
               "DefaultValue": "SET-DEFAULT",
               "Description": "Required field for Akamai Tech contact."
+            },
+            {
+              "Name": "deployment-network",
+              "DisplayName": "Deployment Network",
+              "Type": "MultipleChoice",
+              "RequiredWhen": {
+                "HasPrivateKey": false,
+                "OnAdd": false,
+                "OnRemove": false,
+                "OnReenrollment": true
+              },
+              "Options": "Standard TLS,Enhanced TLS",
+              "DefaultValue": "Standard TLS",
+              "Description": "Required field for Deployment Network."
             }
           ],
           "PasswordOptions": {

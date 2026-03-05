@@ -1,4 +1,4 @@
-﻿// Copyright 2023 Keyfactor
+﻿// Copyright 2026 Keyfactor
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using Keyfactor.Extensions.Utilities.HttpInterface;
+using Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Factories;
 using Microsoft.Extensions.Logging;
 
 namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
@@ -28,31 +28,46 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
     public class Inventory : AkamaiJob, IInventoryJobExtension
     {
         public string ExtensionName => "Akamai";
+        
+        private readonly ILogger _logger;
+        private readonly IAkamaiClientFactory _akamaiClientFactory;
+
+        // default constructor for production use
+        public Inventory()
+        {
+            _logger = LogHandler.GetClassLogger<Reenrollment>();
+            _akamaiClientFactory = new AkamaiClientFactory();
+        }
+
+        // constructor for dependency injection of logger, to allow for better logging in unit tests
+        public Inventory(ILogger logger, IAkamaiClientFactory akamaiClientFactory)
+        {
+            _logger = logger;
+            _akamaiClientFactory = akamaiClientFactory;
+        }
 
         public JobResult ProcessJob(InventoryJobConfiguration jobConfiguration, SubmitInventoryUpdate submitInventoryUpdate)
         {
             JobHistoryId = jobConfiguration.JobHistoryId;
-            ILogger logger = LogHandler.GetClassLogger<Inventory>();
-            AkamaiClient client;
+            IAkamaiClient client;
             string enrollmentType;
             try
             {
-                logger.LogTrace("Reading store properties for Akamai auth information.");
+                _logger.LogTrace("Reading store properties for Akamai auth information.");
                 var storeProps = JsonConvert.DeserializeObject<Dictionary<string, string>>(jobConfiguration.CertificateStoreDetails.Properties);
-                AkamaiAuth auth = new AkamaiAuth(storeProps);
 
-                logger.LogTrace("Creating Akamai Client.");
-                client = new AkamaiClient(logger, jobConfiguration.CertificateStoreDetails.ClientMachine, auth);
+                _logger.LogTrace("Creating Akamai Client.");
 
                 enrollmentType = jobConfiguration.CertificateStoreDetails.StorePath;
-                logger.LogTrace($"Setting enrollment type as '{enrollmentType}'");
-                client.SetDeploymentType(enrollmentType);
+                client = _akamaiClientFactory.Create(_logger, storeProps, jobConfiguration.CertificateStoreDetails.ClientMachine, enrollmentType);
+                
+                _logger.LogDebug("Successfully created Akamai client");
             }
             catch (Exception e)
             {
-                logger.LogError("Error occurred while setting up Akamai Client.");
+                _logger.LogError("Error occurred while setting up Akamai Client.");
                 string errorMessage = FlattenException(e);
-                logger.LogError(errorMessage);
+                _logger.LogError(errorMessage);
                 return Failure(errorMessage);
             }
 
@@ -62,13 +77,13 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             try
             {
                 enrollments = client.GetEnrollments();
-                logger.LogDebug($"Found {enrollments.Length} total enrollments.");
+                _logger.LogDebug($"Found {enrollments.Length} total enrollments.");
             }
             catch (Exception e)
             {
-                logger.LogError("Error occurred getting list of enrollments.");
+                _logger.LogError("Error occurred getting list of enrollments.");
                 string errorMessage = FlattenException(e);
-                logger.LogError(errorMessage);
+                _logger.LogError(errorMessage);
                 return Failure(errorMessage);
             }
 
@@ -77,11 +92,11 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             {
                 foreach(var enrollment in enrollments)
                 {
-                    logger.LogDebug($"Attempting to retrieve {enrollmentType} certificate from enrollment {enrollment.id}");
+                    _logger.LogDebug($"Attempting to retrieve {enrollmentType} certificate from enrollment {enrollment.id}");
                     CertificateInfo cert = client.GetCertificate(enrollment.id);
                     if (cert != null) // some enrollments found will not have a cert of the same deployment type
                     {
-                        logger.LogTrace($"Found certificate for enrollment {enrollment.id} of type {enrollmentType}.");
+                        _logger.LogTrace($"Found certificate for enrollment {enrollment.id} of type {enrollmentType}.");
                         var x509Cert = new X509Certificate2(Encoding.UTF8.GetBytes(cert.certificate));
                         inventory.Add(
                             new CurrentInventoryItem()
@@ -100,21 +115,21 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                     }
                     else
                     {
-                        logger.LogTrace($"Enrollment {enrollment.id} did not have a certificate of type {enrollmentType}.");
+                        _logger.LogTrace($"Enrollment {enrollment.id} did not have a certificate of type {enrollmentType}.");
                     }
                 }
             }
             catch (Exception e)
             {
-                logger.LogError("Error occurred while reading certificates from list of Akamai enrollments.");
+                _logger.LogError("Error occurred while reading certificates from list of Akamai enrollments.");
                 string errorMessage = FlattenException(e);
-                logger.LogError(errorMessage);
+                _logger.LogError(errorMessage);
                 return Failure(errorMessage);
             }
 
-            logger.LogInformation($"Inventory result: {enrollments.Length} total enrollments found, with {inventory.Count} certificates inventoried for {enrollmentType} type.");
+            _logger.LogInformation($"Inventory result: {enrollments.Length} total enrollments found, with {inventory.Count} certificates inventoried for {enrollmentType} type.");
             bool success = submitInventoryUpdate.Invoke(inventory);
-            logger.LogTrace("Inventory results submitted to Keyfactor.");
+            _logger.LogTrace("Inventory results submitted to Keyfactor.");
 
             if (success)
             {
@@ -123,7 +138,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             else
             {
                 string errorMessage = "SubmitInventory Invoke did not report a success.";
-                logger.LogError(errorMessage);
+                _logger.LogError(errorMessage);
                 return Failure(errorMessage);
             }
         }

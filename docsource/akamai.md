@@ -30,9 +30,10 @@ Example: `www.example01.com&www.example02.com`
 ### Configure Renewal of Certificates using a Workflow
 Akamai does not support traditional certificate Renewal or one-click Renewal done in the Keyfactor Command platform. 
 The Renewal process creates Certificates with outside keys which are not allowed to be imported into Akamai CPS. As a 
-result, the Reenrollment Job must be used in order to renew existing certificates that reside on the Akamai system. 
+result, the Reenrollment (ODKG) Job must be used in order to renew existing certificates that reside on the Akamai system. 
 Reenrollment is required as opposed to the Renewal process as it allows Akamai to generate the keys on their platform, 
 which are used to create a certificate in Keyfactor.
+
 Renewing existing certificates in Akamai means running a Reenrollment Job with the same `Enrollment ID` that was used 
 for an existing Certificate Enrollment. This can be done manually through the Reenrollment prompt, but an automated 
 process can also be configured using a Keyfactor Workflow. The Workflow should be configured to target a Keyfactor 
@@ -41,3 +42,26 @@ targeting the `CertStoreFQDN` containing `Akamai` and can be further restricted 
 `Production` or `Staging`. A sample workflow for ODKG / Reenrollment scheduling for renewals can be viewed in the 
 [kf-workflow-samples repo](https://github.com/Keyfactor/kf-workflow-samples). When running the sample workflow, it will 
 assume that all certs passed to the script should schedule a Reenrollment job with their existing parameters in Akamai.
+
+### Deployment Network Configuration
+
+When enrolling a certificate, you can now specify the `Deployment Network` of the certificate. The valid values are `Standard TLS` and `Enhanced TLS`. If not specified, `Standard TLS` will be used by default for backwards compatibility.
+
+When performing a Reenrollment of an existing certificate, if the `Deployment Network` specified in the Reenrollment configuration is different from the existing enrollment's network type, the existing enrollment network will be preserved. Akamai does not support changing the network type of an existing enrollment. A warning message will be returned in this case to indicate that the network type could not be updated.
+
+If the deployment network for an enrollment needs to be changed, a new enrollment must be created with the desired network type.
+
+> [!NOTE]
+>
+> If the certificate store type was created before version 2.0.0 of the Akamai CPS Orchestrator, please either update the certificate store type from the UI or utilize [the job properties SQL script](akamai-cps-orchestrator/jobproperties.sql) to add the `Deployment Network` entry parameter to the store type.
+
+### Trust Chain Building
+
+A new feature introduced in 2.0.0 of the Akamai CPS Orchestrator is the ability to build the trust chain of the enrolled certificate and add this to the Akamai trust chain for the certificate.
+
+Currently, only the leaf certificate is returned from Keyfactor Command after enrolling a CSR, so the orchestrator will attempt to build the trust chain with two separate methods:
+- Retieving the intermediate and root certificates using the AIA information in the leaf certificate
+- Searching the trust store of the system running the orchestrator for matching intermediate and root certificates (both must be found in order to build the chain)
+
+If the trust chain cannot be built using either of these methods, the orchestrator will still complete the enrollment, but a warning message will be returned indicating that the trust chain could not be built. Please ensure that the intermediate and root certificates are part of your system's trust store or have publicly available AIA information to allow the orchestrator to build the trust chain successfully.
+
