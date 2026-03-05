@@ -23,10 +23,10 @@ using Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Services;
 using Keyfactor.Orchestrators.Common.Enums;
 using Keyfactor.Orchestrators.Extensions;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 using Xunit.Abstractions;
+using X509Certificate = Org.BouncyCastle.X509.X509Certificate;
 
 namespace akamai_cps_orchestrator.Tests.Jobs;
 
@@ -34,10 +34,12 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
 {
     // Generated once per test class to avoid RSA key generation cost per test.
     private static readonly X509Certificate2 TestCert = CreateSelfSignedCert();
+    private static readonly X509Certificate TestBcCert = CreateSelfSignedCertBouncyCastle();
 
-    private readonly Mock<IAkamaiClientFactory> _mockFactory = new Mock<IAkamaiClientFactory>();
-    private readonly Mock<IAkamaiClient> _mockClient = new Mock<IAkamaiClient>();
-    private readonly Mock<ITimerService> _mockTimerService = new Mock<ITimerService>();
+    private readonly Mock<IAkamaiClientFactory> _mockFactory = new ();
+    private readonly Mock<IAkamaiClient> _mockClient = new ();
+    private readonly Mock<ITimerService> _mockTimerService = new ();
+    private readonly Mock<ICertificateChainService> _mockCertificateChainService = new ();
 
     public ReenrollmentTests(ITestOutputHelper output) : base(output)
     {
@@ -227,6 +229,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
     [Fact]
     public void ProcessJob_WhenGetCSRReturns404OnceThenSucceeds_DelaysOnceAndContinues()
     {
+        SetupClientForHappyPath("", "");
         _mockClient
             .Setup(c => c.CreateEnrollment(It.IsAny<Enrollment>(), It.IsAny<string>()))
             .Returns(MakeCreatedEnrollment(enrollmentId: "99", changeId: "100"));
@@ -284,6 +287,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
     [Fact]
     public void ProcessJob_WhenPostCertificateThrows_ReturnsFailure()
     {
+        SetupClientForHappyPath("", "");
         _mockClient
             .Setup(c => c.CreateEnrollment(It.IsAny<Enrollment>(), It.IsAny<string>()))
             .Returns(MakeCreatedEnrollment(enrollmentId: "99", changeId: "100"));
@@ -308,6 +312,8 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
     [Fact]
     public void ProcessJob_WhenAcknowledgeWarningsThrowsNonNotFoundException_ReturnsFailure()
     {
+        SetupClientForHappyPath("", "");
+        
         _mockClient
             .Setup(c => c.CreateEnrollment(It.IsAny<Enrollment>(), It.IsAny<string>()))
             .Returns(MakeCreatedEnrollment(enrollmentId: "99", changeId: "100"));
@@ -327,6 +333,8 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
     [Fact]
     public void ProcessJob_WhenAcknowledgeWarningsReturns404OnceThenSucceeds_DelaysOnceAndReturnsSuccess()
     {
+        SetupClientForHappyPath("", "");
+        
         _mockClient
             .Setup(c => c.CreateEnrollment(It.IsAny<Enrollment>(), It.IsAny<string>()))
             .Returns(MakeCreatedEnrollment(enrollmentId: "99", changeId: "100"));
@@ -348,6 +356,8 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
     [Fact]
     public void ProcessJob_WhenAcknowledgeWarningsAlwaysReturns404_ExhaustsRetriesAndReturnsWarning()
     {
+        SetupClientForHappyPath("", "");
+        
         _mockClient
             .Setup(c => c.CreateEnrollment(It.IsAny<Enrollment>(), It.IsAny<string>()))
             .Returns(MakeCreatedEnrollment(enrollmentId: "99", changeId: "100"));
@@ -399,6 +409,60 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
         var result = job.ProcessJob(MakeReenrollmentConfig(enrollmentId: "42"), _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Success, result.Result);
+    }
+    
+    // --- Certificate chain --
+    
+    [Fact]
+    public void ProcessJob_WhenCertificateChainHasNullChain_SendsNullTrustChainAndReturnsWarning()
+    {
+        SetupClientForHappyPath(enrollmentId: "99", changeId: "100");
+        Enrollment capturedEnrollment = null;
+        _mockClient
+            .Setup(c => c.CreateEnrollment(It.IsAny<Enrollment>(), It.IsAny<string>()))
+            .Callback<Enrollment, string>((e, _) => capturedEnrollment = e)
+            .Returns(MakeCreatedEnrollment(enrollmentId: "99", changeId: "100"));
+        
+        _mockCertificateChainService.Setup(p => p.BuildCertificateCollection(It.IsAny<X509Certificate>())).Returns(new CertificateCollection()
+        {
+            EndEntityCert = TestBcCert,
+            ChainCerts = null,
+        });
+        
+        var job = GetReenrollmentClass();
+        var result = job.ProcessJob(MakeReenrollmentConfig(), _ => TestCert);
+        
+        _mockClient
+            .Verify(c => c.PostCertificate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<string>(), It.Is<string?>(s => s == null)), Times.Once);
+        
+        Assert.Equal(OrchestratorJobStatusJobResult.Warning, result.Result);
+        Assert.Equal("Enrollment completed but the certificate's trust chain could not be built. Please verify the intermediate and root certificates are part of your system's trust store or have publicly available AIA information.", result.FailureMessage);
+    }
+    
+    [Fact]
+    public void ProcessJob_WhenCertificateChainHasDefinedTrustChain_SendsTrustChain()
+    {
+        SetupClientForHappyPath(enrollmentId: "99", changeId: "100");
+        Enrollment capturedEnrollment = null;
+        var expectedString = Convert.ToBase64String(TestBcCert.GetEncoded());
+        _mockClient
+            .Setup(c => c.CreateEnrollment(It.IsAny<Enrollment>(), It.IsAny<string>()))
+            .Callback<Enrollment, string>((e, _) => capturedEnrollment = e)
+            .Returns(MakeCreatedEnrollment(enrollmentId: "99", changeId: "100"));
+        
+        _mockCertificateChainService.Setup(p => p.BuildCertificateCollection(It.IsAny<X509Certificate>())).Returns(new CertificateCollection()
+        {
+            EndEntityCert = TestBcCert,
+            ChainCerts = new List<X509Certificate>(){TestBcCert},
+        });
+        
+        var job = GetReenrollmentClass();
+        job.ProcessJob(MakeReenrollmentConfig(), _ => TestCert);
+        
+        _mockClient
+            .Verify(c => c.PostCertificate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<string>(), It.Is<string?>(s => s != null && s.Contains(expectedString))), Times.Once);
     }
 
     // --- Deployment network ---
@@ -549,7 +613,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
 
     private Reenrollment GetReenrollmentClass()
     {
-        return new Reenrollment(Logger, _mockFactory.Object, _mockTimerService.Object);
+        return new Reenrollment(Logger, _mockFactory.Object, _mockTimerService.Object, _mockCertificateChainService.Object);
     }
 
     /// Sets up the mock client for the post-enrollment steps (GetCSR, PostCertificate,
@@ -559,6 +623,13 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
         _mockClient
             .Setup(c => c.GetCSR(enrollmentId, changeId, It.IsAny<string>()))
             .Returns("-----BEGIN CERTIFICATE REQUEST-----\nfakecsr\n-----END CERTIFICATE REQUEST-----");
+        
+        _mockCertificateChainService.Setup(p => p.BuildCertificateCollection(It.IsAny<X509Certificate>())).Returns(
+            new CertificateCollection()
+            {
+                EndEntityCert = TestBcCert,
+                ChainCerts = new List<X509Certificate>() { TestBcCert },
+            });
         // PostCertificate and AcknowledgeWarnings are void — Moq's default is to do nothing,
         // which is the success case for these methods.
     }
@@ -664,5 +735,29 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
         return req.CreateSelfSigned(
             DateTimeOffset.UtcNow.AddDays(-1),
             DateTimeOffset.UtcNow.AddYears(1));
+    }
+    
+    private static X509Certificate CreateSelfSignedCertBouncyCastle()
+    {
+        var random = new Org.BouncyCastle.Security.SecureRandom();
+        var keyPairGenerator = new Org.BouncyCastle.Crypto.Generators.RsaKeyPairGenerator();
+        keyPairGenerator.Init(new Org.BouncyCastle.Crypto.KeyGenerationParameters(random, 2048));
+        var keyPair = keyPairGenerator.GenerateKeyPair();
+
+        var certGen = new Org.BouncyCastle.X509.X509V3CertificateGenerator();
+        certGen.SetSerialNumber(Org.BouncyCastle.Math.BigInteger.ProbablePrime(120, random));
+        certGen.SetSubjectDN(new Org.BouncyCastle.Asn1.X509.X509Name("CN=test.example.com"));
+        certGen.SetIssuerDN(new Org.BouncyCastle.Asn1.X509.X509Name("CN=test.example.com"));
+        certGen.SetNotBefore(DateTime.UtcNow.AddDays(-1));
+        certGen.SetNotAfter(DateTime.UtcNow.AddYears(1));
+        certGen.SetPublicKey(keyPair.Public);
+
+        var signatureFactory = new Org.BouncyCastle.Crypto.Operators.Asn1SignatureFactory(
+            "SHA256WithRSA",
+            keyPair.Private,
+            random
+        );
+
+        return certGen.Generate(signatureFactory);
     }
 }

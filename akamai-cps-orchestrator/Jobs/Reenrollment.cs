@@ -21,9 +21,12 @@ using Newtonsoft.Json;
 using Microsoft.Extensions.Logging;
 using Keyfactor.Logging;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using Keyfactor.Extensions.Utilities.HttpInterface.Exceptions;
 using Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Factories;
 using Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Services;
+using Org.BouncyCastle.X509;
+using X509Certificate = Org.BouncyCastle.X509.X509Certificate;
 
 namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
 {
@@ -34,6 +37,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
         private readonly ILogger _logger;
         private readonly IAkamaiClientFactory _akamaiClientFactory;
         private readonly ITimerService _timerService;
+        private readonly ICertificateChainService _certificateChainService;
 
         // default constructor for production use
         public Reenrollment()
@@ -41,14 +45,16 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             _logger = LogHandler.GetClassLogger<Reenrollment>();
             _akamaiClientFactory = new AkamaiClientFactory();
             _timerService = new TimerService();
+            _certificateChainService = new CertificateChainService();
         }
 
         // constructor for dependency injection of logger, to allow for better logging in unit tests
-        public Reenrollment(ILogger logger, IAkamaiClientFactory akamaiClientFactory, ITimerService timerService)
+        public Reenrollment(ILogger logger, IAkamaiClientFactory akamaiClientFactory, ITimerService timerService, ICertificateChainService certificateChainService)
         {
             _logger = logger;
             _akamaiClientFactory = akamaiClientFactory;
             _timerService = timerService;
+            _certificateChainService = certificateChainService;
         }
 
         public JobResult ProcessJob(ReenrollmentJobConfiguration jobConfiguration, SubmitReenrollmentCSR submitReenrollmentUpdate)
@@ -56,6 +62,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             JobHistoryId = jobConfiguration.JobHistoryId;
             IAkamaiClient client;
             bool secureNetworkMismatch = false;
+            bool trustChainBuilt = false;
             
             try
             {
@@ -320,31 +327,49 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
 
             // submit csr
             _logger.LogTrace("Submitting CSR to Keyfactor");
-            var x509Cert = submitReenrollmentUpdate.Invoke(csr);
+            var leafCert = submitReenrollmentUpdate.Invoke(csr);
             _logger.LogDebug("Certificate returned from CSR enrollment.");
 
-            if (x509Cert == null)
+            if (leafCert == null)
             {
                 string errorMessage = "Certificate was not returned from Keyfactor for submitted CSR.";
                 _logger.LogError(errorMessage);
                 _logger.LogTrace($"Failed CSR: \n{csr}");
                 return Failure(errorMessage);
             }
+            
+            var x509Cert = ConvertToBouncyCastleX509(leafCert);
+
+            var chain = _certificateChainService.BuildCertificateCollection(x509Cert);
 
             // submit certificate info to deployment
             // build PEM content
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("-----BEGIN CERTIFICATE-----");
-            sb.AppendLine(Convert.ToBase64String(x509Cert.RawData, Base64FormattingOptions.InsertLineBreaks));
-            sb.AppendLine("-----END CERTIFICATE-----");
+            AppendCertificatePEM(sb, chain.EndEntityCert);
             var certContent = sb.ToString();
 
             certContent = certContent.Replace("\r", "");
 
+            string? trustChain = null;
+            if (chain.ChainCerts != null)
+            {
+                _logger.LogTrace("Building trust chain content for deployment.");
+                sb.Clear();
+                
+                foreach (var cert in chain.ChainCerts)
+                {
+                    AppendCertificatePEM(sb, cert);
+                }
+                _logger.LogTrace("Successfully built trust chain content for deployment.");
+
+                trustChain = sb.ToString();
+                trustChainBuilt = true;
+            }
+
             _logger.LogTrace("Posting certificate to Akamai.");
             try
             {
-                client.PostCertificate(enrollmentId, changeId, certContent, keyType);
+                client.PostCertificate(enrollmentId, changeId, certContent, keyType, trustChain);
             }
             catch (Exception e)
             {
@@ -398,6 +423,13 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                 _logger.LogWarning(warnMessage);
                 return Warning(warnMessage);
             }
+
+            if (!trustChainBuilt)
+            {
+                string warnMessage = "Enrollment completed but the certificate's trust chain could not be built. Please verify the intermediate and root certificates are part of your system's trust store or have publicly available AIA information.";
+                _logger.LogWarning(warnMessage);
+                return Warning(warnMessage);
+            }
             
             _logger.LogInformation($"Warnings acknowleged for enrollment - {enrollmentId}");
             return Success();
@@ -412,6 +444,29 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                 throw new ArgumentException(error);
             }
             return dict[key].ToString();
+        }
+        
+        private X509Certificate ConvertToBouncyCastleX509(X509Certificate2 cert)
+        {
+            _logger.LogTrace("Converting X509Certificate2 to BouncyCastle X509Certificate for certificate with thumbprint {thumbprint}", cert.Thumbprint);
+            var result = new X509CertificateParser().ReadCertificate(cert.RawData);
+            _logger.LogDebug("Successfully converted X509Certificate2 to BouncyCastle X509Certificate for certificate with thumbprint {thumbprint}", cert.Thumbprint);
+            return result;
+        }
+
+        private void AppendCertificatePEM(StringBuilder sb, X509Certificate cert)
+        {
+            sb.AppendLine("-----BEGIN CERTIFICATE-----");
+            sb.AppendLine(GetCertificateContents(cert));
+            sb.AppendLine("-----END CERTIFICATE-----");
+        }
+
+        private string GetCertificateContents(X509Certificate cert)
+        {
+            _logger.LogTrace("Getting certificate contents as Base64 string for certificate with subject {subject} and thumbprint {thumbprint}", cert.SubjectDN, cert.SerialNumber);
+            var result = Convert.ToBase64String(cert.GetEncoded());
+            _logger.LogTrace("Successfully got certificate contents as Base64 string for certificate with subject {subject} and thumbprint {thumbprint}", cert.SubjectDN, cert.SerialNumber);
+            return result;
         }
 
         private static string ParseSecureNetwork(string displayValue)

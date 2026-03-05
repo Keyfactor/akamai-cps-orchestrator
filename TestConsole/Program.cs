@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System.Diagnostics;
-using Keyfactor.Extensions.Utilities.HttpInterface;
 using Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Factories;
 using Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models;
 using Microsoft.Extensions.Logging;
