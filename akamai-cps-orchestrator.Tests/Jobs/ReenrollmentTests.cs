@@ -192,6 +192,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
         var result = GetReenrollmentClass().ProcessJob(MakeReenrollmentConfig(), _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
+        Assert.Contains("Enrollment already exists for CN 'test.example.com'. Cannot create a duplicate.", result.FailureMessage);
     }
 
     [Fact]
@@ -358,6 +359,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
         var result = GetReenrollmentClass().ProcessJob(MakeReenrollmentConfig(), _ => TestCert);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Warning, result.Result);
+        Assert.Contains("Maximum retries reached and the deployment warnings could not be acknowledged. Certificate may not be deployed.", result.FailureMessage);
         _mockTimerService.Verify(t => t.DelayBySeconds(20), Times.Exactly(4));
     }
     
@@ -403,7 +405,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<string>(), It.Is<string?>(s => s == null)), Times.Once);
         Assert.Equal(OrchestratorJobStatusJobResult.Warning, result.Result);
-        Assert.Equal(
+        Assert.Contains(
             "Enrollment completed but the certificate's trust chain could not be built. Please verify the intermediate and root certificates are part of your system's trust store or have publicly available AIA information.",
             result.FailureMessage);
     }
@@ -426,6 +428,34 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
         _mockClient.Verify(c => c.PostCertificate(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<string>(), It.Is<string?>(s => s != null && s.Contains(expectedBase64))), Times.Once);
+    }
+    
+    [Fact]
+    public void ProcessJob_WhenCertificateChainHasNullChain_DeploymentNetworkIsDifferent_ReturnsWarning()
+    {
+        var existing = MakeExistingEnrollment("42");
+        existing.networkConfiguration.secureNetwork = "standard-tls";
+        Enrollment? captured = null;
+        SetupExistingEnrollmentPath("42", "200", existing, capture: e => captured = e);
+        var config = MakeReenrollmentConfig(enrollmentId: "42");
+        config.JobProperties["deployment-network"] = "Enhanced TLS";
+        
+        _mockCertificateChainService
+            .Setup(s => s.BuildCertificateCollection(It.IsAny<X509Certificate>()))
+            .Returns(new CertificateCollection { EndEntityCert = TestBcCert, ChainCerts = null });
+
+        var result = GetReenrollmentClass().ProcessJob(config, _ => TestCert);
+
+
+        Assert.Equal(OrchestratorJobStatusJobResult.Warning, result.Result);
+
+        // This tests that warning messages can be combined when both conditions occur.
+        Assert.Contains(
+            "Enrollment completed but the certificate's trust chain could not be built. Please verify the intermediate and root certificates are part of your system's trust store or have publicly available AIA information.",
+            result.FailureMessage);
+        Assert.Contains(
+            "Certificate was deployed, but the deployment network type could not be updated if it was different from the original enrollment. Enrollment preserved original network type.",
+            result.FailureMessage);
     }
     
     #endregion
@@ -501,7 +531,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
 
         Assert.Equal(existingNetwork, captured!.networkConfiguration.secureNetwork);
         Assert.Equal(OrchestratorJobStatusJobResult.Warning, result.Result);
-        Assert.Equal(
+        Assert.Contains(
             "Certificate was deployed, but the deployment network type could not be updated if it was different from the original enrollment. Enrollment preserved original network type.",
             result.FailureMessage);
     }
