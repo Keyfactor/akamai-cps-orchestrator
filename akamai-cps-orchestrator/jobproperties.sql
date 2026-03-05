@@ -8,6 +8,7 @@ values
 	(@id, 'client_token', 'Client Token', 3, 1),
 	(@id, 'client_secret', 'Client Secret', 3, 1)
 
+-- This schema is no longer valid as of Command 25.4, but retaining for backward compatibility with older versions.
 insert into [cms_agents].[CertStoreTypeEntryParameters]([StoreTypeId], [Name], [DisplayName], [Type], [RequiredWhen])
 values
 	(@id, 'EnrollmentId', 'Enrollment ID', 0, 0),
@@ -45,3 +46,9 @@ values
 	(@id, 'tech-postalCode', 'Tech - Postal Code', 0, 8),
 	(@id, 'tech-region', 'Tech - Region', 0, 8),
 	(@id, 'tech-title', 'Tech - Title', 0, 8)
+
+
+-- Migration to add Deployment Network entry parameter
+insert into [cms_agents].[CertStoreTypeEntryParameters]([StoreTypeId], [Name], [DisplayName], [Type], [DefaultValue], [Options], [ValidationOptions])
+values
+	(@id, 'deployment-network', 'Deployment Network', 2, 'Standard TLS', 'Standard TLS,Enhanced TLS', '{"HasPrivateKey":0,"OnAdd":0,"OnRemove":0,"OnODKG":1}'),
