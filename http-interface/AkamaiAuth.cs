@@ -1,4 +1,4 @@
-// Copyright 2025 Keyfactor
+// Copyright 2026 Keyfactor
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,37 +17,45 @@ using System.Collections.Generic;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
+using Keyfactor.Extensions.Utilities.HttpInterface.Contexts;
 
 namespace Keyfactor.Extensions.Utilities.HttpInterface
 {
+    /// <summary>
+    /// This class implements the Akamai EdgeGrid protocol for generating the appropriate authentication header for Akamai API requests.
+    /// It uses HMAC-SHA256 for signing the request details and client credentials, as specified by Akamai's authentication requirements.
+    ///
+    /// As of Feb 2026, Akamai does not have a (production-ready) package for generating EdgeGrid authentication headers, so this class was implemented based on the specifications outlined in their documentation: https://github.com/akamai/AkamaiOPEN-edgegrid-C-Sharp/tree/master
+    /// </summary>
     public class AkamaiAuth
     {
         private readonly string _clientSecret;
         private readonly string _clientToken;
         private readonly string _accessToken;
 
-        private string Nonce { get { return Guid.NewGuid().ToString(); } }
+        private readonly IAkamaiAuthContext _authContext;
         public readonly string AuthType = "EG1-HMAC-SHA256";
 
-        public AkamaiAuth(Dictionary<string, string> jobProperties)
+        public AkamaiAuth(Dictionary<string, string> jobProperties, IAkamaiAuthContext? authContext = null)
         {
             _clientSecret = jobProperties["client_secret"];
             _clientToken = jobProperties["client_token"];
             _accessToken = jobProperties["access_token"];
+            _authContext = authContext ?? new AkamaiAuthContext();
         }
 
-        public AuthenticationHeaderValue GenerateAuthHeader(string requestMethod, string host, string path, string requestBody = null)
+        public AuthenticationHeaderValue GenerateAuthHeader(string requestMethod, string host, string path, string? requestBody = null)
         {
-            DateTime time = DateTime.UtcNow;
-            string timestamp = time.ToString("yyyyMMddTHH:mm:ss+0000");
+            string timestamp = _authContext.GetTime().ToString("yyyyMMddTHH:mm:ss+0000");
+            string nonce = _authContext.GetNonce();
 
             string authFormat = "client_token={0};access_token={1};timestamp={2};nonce={3};";
-            string authHeaderValue = string.Format(authFormat, _clientToken, _accessToken, timestamp, Nonce);
+            string authHeaderValue = string.Format(authFormat, _clientToken, _accessToken, timestamp, nonce);
 
             // Auth Header signing key is the signature from signing the timestamp with client secret
             string signingKey = Convert.ToBase64String(SignData_HMAC_SHA256(timestamp, Encoding.UTF8.GetBytes(_clientSecret)));
 
-            byte[] requestBodyHash = null;
+            byte[]? requestBodyHash = null;
             if (!string.IsNullOrWhiteSpace(requestBody))
             {
                 requestBodyHash = SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(requestBody));
