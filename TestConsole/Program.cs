@@ -1,4 +1,4 @@
-﻿// Copyright 2025 Keyfactor
+﻿// Copyright 2026 Keyfactor
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 // limitations under the License.
 
 using System.Diagnostics;
-using Keyfactor.Extensions.Utilities.HttpInterface;
+using Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Factories;
 using Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models;
 using Microsoft.Extensions.Logging;
 
@@ -46,10 +46,10 @@ class Program
         });
         
         _logger = loggerFactory.CreateLogger<Program>();
-        
-        AkamaiAuth auth = new AkamaiAuth(storeProps);
-        AkamaiClient client = new AkamaiClient(_logger, clientMachine, auth);
-        client.SetDeploymentType(Constants.StorePaths.Staging);
+
+        AkamaiClientFactory akamaiClientFactory = new AkamaiClientFactory();
+        IAkamaiClient client =
+            akamaiClientFactory.Create(_logger, storeProps, clientMachine, Constants.StorePaths.Staging);
         
         // StressTestGetEnrollments(client);
         
@@ -70,7 +70,7 @@ class Program
         _logger.LogInformation("API test suite completed successfully.");
     }
 
-    private static void StressTestGetEnrollments(AkamaiClient client)
+    private static void StressTestGetEnrollments(IAkamaiClient client)
     {
         int maxRequests = 51;
         // https://techdocs.akamai.com/cps/reference/rate-limiting
@@ -86,7 +86,7 @@ class Program
         }
     }
     
-    private static Enrollment[] GetEnrollments(AkamaiClient client)
+    private static Enrollment[] GetEnrollments(IAkamaiClient client)
     {
         _logger.LogInformation($"Getting enrollments...");
         var result = client.GetEnrollments();
@@ -94,7 +94,7 @@ class Program
         return result;
     }
 
-    private static Enrollment GetEnrollment(AkamaiClient client, string id)
+    private static Enrollment GetEnrollment(IAkamaiClient client, string id)
     {
         _logger.LogInformation($"Getting enrollment {id}...");
         var enrollment = client.GetEnrollment(id);
@@ -102,21 +102,21 @@ class Program
         return enrollment;
     }
     
-    private static void GetCertificate(AkamaiClient client, string enrollmentId)
+    private static void GetCertificate(IAkamaiClient client, string enrollmentId)
     {
         _logger.LogInformation($"Getting certificate with enrollment ID {enrollmentId}...");
         var cert = client.GetCertificate(enrollmentId);
         _logger.LogInformation($"Certificate with enrollment ID {enrollmentId} retrieved successfully.");
     }
 
-    private static void GetEnrollmentChangeHistory(AkamaiClient client, string enrollmentId)
+    private static void GetEnrollmentChangeHistory(IAkamaiClient client, string enrollmentId)
     {
         _logger.LogInformation($"Getting enrollment change history for enrollment ID {enrollmentId}...");
         var history = client.GetEnrollmentChangeHistory(enrollmentId);
         _logger.LogInformation($"Enrollment change history for enrollment ID {enrollmentId} retrieved successfully. Change history count: {history.changes.Length}");
     }
 
-    private static void UpdateEnrollment(AkamaiClient client, string enrollmentId, Enrollment enrollment)
+    private static void UpdateEnrollment(IAkamaiClient client, string enrollmentId, Enrollment enrollment)
     {
         _logger.LogInformation($"Updating enrollment {enrollmentId}...");
         client.UpdateEnrollment(enrollmentId, enrollment);

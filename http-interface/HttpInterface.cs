@@ -18,6 +18,8 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
+using Keyfactor.Extensions.Utilities.HttpInterface.Configs;
+using Keyfactor.Extensions.Utilities.HttpInterface.Exceptions;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 

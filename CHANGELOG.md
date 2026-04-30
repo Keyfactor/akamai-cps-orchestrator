@@ -1,3 +1,16 @@
+# 2.0.0
+Features:
+- Add the ability to specify the **Deployment Network** of a certificate (Standard TLS vs Enhanced TLS). By default, Standard TLS certificates will be enrolled.
+- Add support for building the trust chain of the enrolled certificate and adding this to the Akamai trust chain for the certificate. Please review the integration documentation for more information.
+
+Certificate Store Type Changes:
+- A new entry parameter, `Deployment Network` has been added to specify the network type for the enrolled certificate. Valid values are `Standard TLS` and `Enhanced TLS`. For backwards compatibility, if not specified, `Standard TLS` will be used.
+
+> [!IMPORTANT]
+> **BREAKING CHANGES**
+> 
+> .NET 6 will no longer be a supported target framework. The minimum supported Universal Orchestrator version is now 12.3, which supports .NET 8.
+
 # 1.2.1
 - Fixes an issue with parsing subject fields on Re-Enrollment, where a subject field contains a comma.
 
