@@ -126,6 +126,7 @@ namespace Keyfactor.Extensions.Utilities.HttpInterface
             try
             {
                 _logger.LogDebug($"Performing POST request to {_http.BaseAddress}/{path}");
+                _logger.LogTrace($"Request body: {body}");
                 
                 var config = new HttpServiceConfig()
                 {
@@ -175,6 +176,7 @@ namespace Keyfactor.Extensions.Utilities.HttpInterface
             try
             {
                 _logger.LogDebug($"Performing PUT request to {_http.BaseAddress}/{path}");
+                _logger.LogTrace($"Request body: {body}");
                 
                 var config = new HttpServiceConfig()
                 {
