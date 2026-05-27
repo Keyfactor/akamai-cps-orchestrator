@@ -1,3 +1,7 @@
+# 2.0.1
+## Fixes
+- Fixes an issue where some network configuration isn't preserved when updating an existing enrollment.
+ 
 # 2.0.0
 Features:
 - Add the ability to specify the **Deployment Network** of a certificate (Standard TLS vs Enhanced TLS). By default, Standard TLS certificates will be enrolled.
