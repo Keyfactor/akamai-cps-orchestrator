@@ -1,3 +1,7 @@
+# 2.0.2
+## Fixes
+- Fix an issue where the `ECC` key type is not properly handled when fetching the CSR from Akamai
+
 # 2.0.1
 ## Fixes
 - Fixes an issue where some network configuration isn't preserved when updating an existing enrollment.

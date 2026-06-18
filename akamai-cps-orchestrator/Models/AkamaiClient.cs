@@ -29,7 +29,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
         ChangeHistory GetEnrollmentChangeHistory(string enrollmentId);
         CreatedEnrollment CreateEnrollment(Enrollment newEnrollment, string contractId);
         CreatedEnrollment UpdateEnrollment(string enrollmentId, Enrollment enrollment);
-        string GetCSR(string enrollmentId, string changeId, string keyType);
+        PendingChange GetPendingChange(string enrollmentId, string changeId, string keyType);
         void DeletePendingChange(string enrollmentId, string changeId);
         void PostCertificate(string enrollmentId, string changeId, string certificate, string keyAlgorithm, string trustChain = null);
         void DeployCertificate(string enrollmentId, string changeId);
@@ -205,11 +205,14 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             return response;
         }
 
-        public string GetCSR(string enrollmentId, string changeId, string keyType)
+        public PendingChange GetPendingChange(string enrollmentId, string changeId, string keyType)
         {
             // get CSR from new pending change
             var path = string.Format(Constants.Endpoints.GetChange, enrollmentId, changeId);
             var acceptHeader = "application/vnd.akamai.cps.csr.v2+json";
+
+            _logger.LogTrace(
+                $"Fetching pending change for enrollmentId {enrollmentId} and changeId {changeId}. URL: {path}");
             
             var config = new HttpRequestConfig()
             {
@@ -217,11 +220,10 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
             };
 
             PendingChange change = _http.Get<PendingChange>(config, path);
+            
+            _logger.LogDebug($"Successfully retrieved pending change for enrollmentId {enrollmentId} and changeId {changeId}");
 
-            // get CSR for correct key type of reenrollment template
-            PendingCSR csr = change.csrs.Where(csr => string.Equals(csr.keyAlgorithm, keyType, StringComparison.CurrentCultureIgnoreCase)).SingleOrDefault();
-
-            return csr.csr;
+            return change;
         }
 
         public void DeletePendingChange(string enrollmentId, string changeId)
