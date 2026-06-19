@@ -2,13 +2,21 @@
 
 select @id = [StoreType] from [cms_agents].[CertStoreTypes] where [ShortName] = 'Akamai'
 
+-- This schema is compatible with Keyfactor Command 24 and below
 insert into [cms_agents].[CertStoreTypeProperties]([StoreTypeId], [Name], [DisplayName], [Type], [Required])
 values
 	(@id, 'access_token', 'Access Token', 3, 1),
 	(@id, 'client_token', 'Client Token', 3, 1),
 	(@id, 'client_secret', 'Client Secret', 3, 1)
 
--- This schema is no longer valid as of Command 25, but retaining for backward compatibility with older versions.
+-- This schema is compatible with Keyfactor Command 25+
+insert into [cms_agents].[CertStoreTypeProperties] (StoreTypeId,Name,DisplayName,[Type],DependsOn,DefaultValue,ValidationOptions) VALUES
+	 (@id,N'access_token',N'Access Token',3,NULL,NULL,N'{"OnCreation":1}'),
+	 (@id,N'client_token',N'Client Token',3,NULL,NULL,N'{"OnCreation":1}'),
+	 (@id,N'client_secret',N'Client Secret',3,NULL,NULL,N'{"OnCreation":1}');
+
+
+-- This schema is compatible with Keyfactor Command 24 and below
 insert into [cms_agents].[CertStoreTypeEntryParameters]([StoreTypeId], [Name], [DisplayName], [Type], [RequiredWhen])
 values
 	(@id, 'EnrollmentId', 'Enrollment ID', 0, 0),
@@ -47,7 +55,7 @@ values
 	(@id, 'tech-region', 'Tech - Region', 0, 8),
 	(@id, 'tech-title', 'Tech - Title', 0, 8)
 
--- This schema will work for Command 25+
+-- This schema is compatible with Keyfactor Command 25+
 INSERT INTO cms_agents.CertStoreTypeEntryParameters (StoreTypeId,Name,DisplayName,[Type],DependsOn,DefaultValue,[Options],ValidationOptions) VALUES
   (@id,N'EnrollmentId',N'Enrollment ID',0,NULL,NULL,NULL,N'{"HasPrivateKey":0,"OnAdd":0,"OnRemove":0,"OnODKG":0}'),
   (@id,N'ContractId',N'Contract ID',0,NULL,N'SET-DEFAULT',NULL,N'{"HasPrivateKey":0,"OnAdd":0,"OnRemove":0,"OnODKG":1}'),
