@@ -19,13 +19,17 @@
 
 Adding new certificates to Akamai requires generating a key in Akamai CPS via the Reenrollment process in Keyfactor. 
 To start this process, go to the Certificate Store that the certificate should be added to. Select the certificate 
-store, and click the `Reenrollment` button to bring up the reenrollment dialog.
+store, and click the `Reenrollment` / `OKDG` button to bring up the reenrollment dialog.
 
 Change any `default` values as needed, and enter an `Enrollment ID` if an existing enrollment needs to be updated instead 
 of creating a new Enrollment. This is different from the `Slot ID` - the `Enrollment ID` is found by clicking on an 
 Active certificate in Akamai CPS, and looking at the `ID` value. The SAN entry needs to be filled out with the DNS value 
 you are using for the certificate's CN. If there are multiple DNS SANs, they should be separated with an ampersand (`&`). 
 Example: `www.example01.com&www.example02.com`
+
+> [!IMPORTANT]
+>
+> This extension only supports `RSA` and `ECC` key algorithms. Please make sure the targeted enrollment pattern or certificate template supports these key algorithms.
 
 ### Configure Renewal of Certificates using a Workflow
 Akamai does not support traditional certificate Renewal or one-click Renewal done in the Keyfactor Command platform. 
