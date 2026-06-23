@@ -121,7 +121,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Unexpected error retrieving CSR for enrollment {enrollmentId}.", enrollmentId);
+                _logger.LogError(e, "Unexpected error retrieving CSR for enrollment {enrollmentId}. Exception: {exception}", enrollmentId, FlattenException(e));
                 return Failure(FlattenException(e));
             }
             if (string.IsNullOrEmpty(csr))
@@ -232,9 +232,11 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             _logger.LogTrace("Parsing enrollment request from job properties.");
 
             string subject = GetRequiredValue(jobProps, "subjectText");
-            string keyType = GetRequiredValue(jobProps, "keyType");
+            string commandKeyType = GetRequiredValue(jobProps, "keyType");
             string contractId = GetRequiredValue(jobProps, "ContractId");
             string sans = GetRequiredValue(jobProps, "Sans");
+
+            string keyType = MapCommandKeyTypeToAkamaiKeyType(commandKeyType);
 
             _logger.LogDebug("Enrollment request: keyType={keyType}, contractId={contractId}, sans={sans}.",
                 keyType, contractId, sans);
@@ -272,6 +274,39 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                 enrollment.networkConfiguration.secureNetwork);
 
             return (enrollment, contractId, keyType);
+        }
+
+        private string MapCommandKeyTypeToAkamaiKeyType(string commandKeyType)
+        {
+            _logger.MethodEntry();
+            
+            _logger.LogTrace($"Mapping the key type {commandKeyType} from Command to an Akamai key type.");
+
+            string keyType = null;
+
+            // Akamai doesn't document its allowed enum values for keyType, but based off available documentation
+            // it seems Akamai only supports RSA and ECDSA.
+            // https://techdocs.akamai.com/cps/reference/certificate#sample-v2-object
+            switch (commandKeyType)
+            {
+                case "RSA":
+                    keyType = "RSA";
+                    break;
+                case "ECC":
+                case "ECDSA": // Command 25.x sends down ECDSA instead of ECC. Should go back to sending ECC in 26.x.
+                    keyType = "ECDSA";
+                    break;
+                default:
+                    _logger.LogError($"Unknown key type '{commandKeyType}', could not be mapped to an Akamai key type.");
+                    throw new ArgumentException(
+                        $"The re-enrollment job received the key type '{commandKeyType}', which could not be mapped to a valid Akamai key type");
+            }
+
+            _logger.LogDebug($"Mapped Command key type {commandKeyType} to key type {keyType}");
+            
+            _logger.MethodExit();
+
+            return keyType;
         }
 
         /// <summary>
@@ -372,17 +407,30 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
         private string FetchCsrWithRetry(IAkamaiClient client, string enrollmentId, string changeId, string keyType)
         {
             const int maxAttempts = 5;
-            _logger.LogDebug("Fetching CSR for enrollment {enrollmentId}, change {changeId} (up to {maxAttempts} attempts).",
-                enrollmentId, changeId, maxAttempts);
+            _logger.LogDebug("Fetching CSR for enrollment {enrollmentId}, change {changeId}, keyType {keyType} (up to {maxAttempts} attempts).",
+                enrollmentId, changeId, keyType, maxAttempts);
 
             for (int attempt = 1; attempt <= maxAttempts; attempt++)
             {
                 try
                 {
-                    var csr = client.GetCSR(enrollmentId, changeId, keyType);
+                    var change = client.GetPendingChange(enrollmentId, changeId, keyType);
                     _logger.LogDebug("CSR retrieved on attempt {attempt}/{maxAttempts} for enrollment {enrollmentId}.",
                         attempt, maxAttempts, enrollmentId);
-                    return csr;
+                    _logger.LogDebug($"CSR count: {change.csrs.Length}. CSRs: {JsonConvert.SerializeObject(change.csrs)}");
+                    _logger.LogTrace($"Filtering CSR for keyType {keyType}...");
+
+                    PendingCSR csr = change.csrs
+                        .FirstOrDefault(csr => string.Equals(csr.keyAlgorithm, keyType, StringComparison.OrdinalIgnoreCase));
+
+                    if (csr is null)
+                    {
+                        _logger.LogError(
+                            $"Akamai did not produce a CSR for keyType '{keyType}'. Please check your Akamai enrollment configuration to see if {keyType} is allowed");
+                        throw new InvalidOperationException($"Akamai did not produce a CSR for keyType '{keyType}'. Please check your Akamai enrollment configuration to see if {keyType} is allowed");
+                    }
+                    
+                    return csr.csr;
                 }
                 catch (HttpInterfaceException e) when (e.ErrorCode == System.Net.HttpStatusCode.NotFound)
                 {

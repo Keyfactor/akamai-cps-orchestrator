@@ -42,13 +42,12 @@ resulting certificates needs to be configured as this is required by Akamai. Add
 approves certificate deployments, even if there are warnings. This behavior should be understood and acknowledged if 
 continuing to use the Akamai CPS Orchestrator.
 
-
-
 ## Compatibility
 
 This integration is compatible with Keyfactor Universal Orchestrator version 12.3 and later.
 
 ## Support
+
 The Akamai Certificate Provisioning System (CPS) Universal Orchestrator extension is supported by Keyfactor. If you require support for any issues or have feature request, please open a support ticket by either contacting your Keyfactor representative or via the Keyfactor Support Portal at https://support.keyfactor.com.
 
 > If you want to contribute bug fixes or additional enhancements, use the **[Pull requests](../../pulls)** tab.
@@ -56,7 +55,6 @@ The Akamai Certificate Provisioning System (CPS) Universal Orchestrator extensio
 ## Requirements & Prerequisites
 
 Before installing the Akamai Certificate Provisioning System (CPS) Universal Orchestrator extension, we recommend that you install [kfutil](https://github.com/Keyfactor/kfutil). Kfutil is a command-line tool that simplifies the process of creating store types, installing extensions, and instantiating certificate stores in Keyfactor Command.
-
 
 ### Akamai Platform Configuration
 
@@ -72,12 +70,9 @@ will contain the `client_secret`, `host`, `access_token`, and `client_token` for
 it should be deleted as the credential file serves as authentication for accessing APIs, and should be treated as a 
 plaintext password and not saved long-term.
 
-
 ## Akamai Certificate Store Type
 
 To use the Akamai Certificate Provisioning System (CPS) Universal Orchestrator extension, you **must** create the Akamai Certificate Store Type. This only needs to happen _once_ per Keyfactor Command instance.
-
-
 
 > [!WARNING]
 > If creating the Certificate Store Type manually, be aware that you will need to save the store-type configuration without entering the custom fields and entry parameters. This is due to a UI limitation. After saving the store type, you will need to run [this SQL script](akamai-cps-orchestrator/jobproperties.sql) on the Keyfactor database to generate all the fields and parameters needed for Akamai CPS.
@@ -94,24 +89,22 @@ To use the Akamai Certificate Provisioning System (CPS) Universal Orchestrator e
 > [!IMPORTANT]
 > The Tech contact information should be your Akamai company contact. It must be an Akamai email address (`<contact>@akamai.com`). The contact's organization name must be set to `Akamai`.
 
-
-
-
 #### Supported Operations
 
-| Operation    | Is Supported                                                                                                           |
-|--------------|------------------------------------------------------------------------------------------------------------------------|
-| Add          | 🔲 Unchecked        |
-| Remove       | 🔲 Unchecked     |
-| Discovery    | 🔲 Unchecked  |
+| Operation    | Is Supported |
+|--------------|--------------|
+| Add          | 🔲 Unchecked |
+| Remove       | 🔲 Unchecked |
+| Discovery    | 🔲 Unchecked |
 | Reenrollment | ✅ Checked |
-| Create       | 🔲 Unchecked     |
+| Create       | 🔲 Unchecked |
 
 #### Store Type Creation
 
 ##### Using kfutil:
 `kfutil` is a custom CLI for the Keyfactor Command API and can be used to create certificate store types.
 For more information on [kfutil](https://github.com/Keyfactor/kfutil) check out the [docs](https://github.com/Keyfactor/kfutil?tab=readme-ov-file#quickstart)
+
    <details><summary>Click to expand Akamai kfutil details</summary>
 
    ##### Using online definition from GitHub:
@@ -130,10 +123,10 @@ For more information on [kfutil](https://github.com/Keyfactor/kfutil) check out 
    ```
    </details>
 
-
 #### Manual Creation
 Below are instructions on how to create the Akamai store type manually in
 the Keyfactor Command Portal
+
    <details><summary>Click to expand manual Akamai details</summary>
 
    Create a store type called `Akamai` with the attributes in the tables below:
@@ -144,11 +137,11 @@ the Keyfactor Command Portal
    | Name | Akamai Certificate Provisioning Service | Display name for the store type (may be customized) |
    | Short Name | Akamai | Short display name for the store type |
    | Capability | Akamai | Store type name orchestrator will register with. Check the box to allow entry of value |
-   | Supports Add | 🔲 Unchecked |  Indicates that the Store Type supports Management Add |
-   | Supports Remove | 🔲 Unchecked |  Indicates that the Store Type supports Management Remove |
-   | Supports Discovery | 🔲 Unchecked |  Indicates that the Store Type supports Discovery |
-   | Supports Reenrollment | ✅ Checked |  Indicates that the Store Type supports Reenrollment |
-   | Supports Create | 🔲 Unchecked |  Indicates that the Store Type supports store creation |
+   | Supports Add | 🔲 Unchecked | Indicates that the Store Type supports Management Add |
+   | Supports Remove | 🔲 Unchecked | Indicates that the Store Type supports Management Remove |
+   | Supports Discovery | 🔲 Unchecked | Indicates that the Store Type supports Discovery |
+   | Supports Reenrollment | ✅ Checked | Indicates that the Store Type supports Reenrollment |
+   | Supports Create | 🔲 Unchecked | Indicates that the Store Type supports store creation |
    | Needs Server | 🔲 Unchecked | Determines if a target server name is required when creating store |
    | Blueprint Allowed | 🔲 Unchecked | Determines if store type may be included in an Orchestrator blueprint |
    | Uses PowerShell | 🔲 Unchecked | Determines if underlying implementation is PowerShell |
@@ -157,18 +150,18 @@ the Keyfactor Command Portal
 
    The Basic tab should look like this:
 
-   ![Akamai Basic Tab](docsource/images/Akamai-basic-store-type-dialog.png)
+   ![Akamai Basic Tab](docsource/images/Akamai-basic-store-type-dialog.svg)
 
    ##### Advanced Tab
    | Attribute | Value | Description |
    | --------- | ----- | ----- |
    | Supports Custom Alias | Forbidden | Determines if an individual entry within a store can have a custom Alias. |
-   | Private Key Handling | Forbidden | This determines if Keyfactor can send the private key associated with a certificate to the store. Required because IIS certificates without private keys would be invalid. |
+   | Private Key Handling | Forbidden | This determines if Keyfactor can send the private key associated with a certificate to the store. |
    | PFX Password Style | Default | 'Default' - PFX password is randomly generated, 'Custom' - PFX password may be specified when the enrollment job is created (Requires the Allow Custom Password application setting to be enabled.) |
 
    The Advanced tab should look like this:
 
-   ![Akamai Advanced Tab](docsource/images/Akamai-advanced-store-type-dialog.png)
+   ![Akamai Advanced Tab](docsource/images/Akamai-advanced-store-type-dialog.svg)
 
    > For Keyfactor **Command versions 24.4 and later**, a Certificate Format dropdown is available with PFX and PEM options. Ensure that **PFX** is selected, as this determines the format of new and renewed certificates sent to the Orchestrator during a Management job. Currently, all Keyfactor-supported Orchestrator extensions support only PFX.
 
@@ -183,7 +176,28 @@ the Keyfactor Command Portal
 
    The Custom Fields tab should look like this:
 
-   ![Akamai Custom Fields Tab](docsource/images/Akamai-custom-fields-store-type-dialog.png)
+   ![Akamai Custom Fields Tab](docsource/images/Akamai-custom-fields-store-type-dialog.svg)
+
+   ###### Access Token
+   The Akamai access_token for authentication.
+
+   ![Akamai Custom Field - access_token](docsource/images/Akamai-custom-field-access_token-dialog.svg)
+   ![Akamai Custom Field - access_token](docsource/images/Akamai-custom-field-access_token-validation-options-dialog.svg)
+
+
+   ###### Client Token
+   The Akamai client_token for authentication.
+
+   ![Akamai Custom Field - client_token](docsource/images/Akamai-custom-field-client_token-dialog.svg)
+   ![Akamai Custom Field - client_token](docsource/images/Akamai-custom-field-client_token-validation-options-dialog.svg)
+
+
+   ###### Client Secret
+   The Akamai client_secret for authentication.
+
+   ![Akamai Custom Field - client_secret](docsource/images/Akamai-custom-field-client_secret-dialog.svg)
+   ![Akamai Custom Field - client_secret](docsource/images/Akamai-custom-field-client_secret-validation-options-dialog.svg)
+
 
 
    ###### Access Token
@@ -255,7 +269,258 @@ the Keyfactor Command Portal
 
    The Entry Parameters tab should look like this:
 
-   ![Akamai Entry Parameters Tab](docsource/images/Akamai-entry-parameters-store-type-dialog.png)
+   ![Akamai Entry Parameters Tab](docsource/images/Akamai-entry-parameters-store-type-dialog.svg)
+   ##### Enrollment ID
+   Enrollment ID of a certificate enrollment in Akamai. This should only be supplied for ODKG when replacing an existing certificate.
+
+   ![Akamai Entry Parameter - EnrollmentId](docsource/images/Akamai-entry-parameters-store-type-dialog-EnrollmentId.svg)
+   ![Akamai Entry Parameter - EnrollmentId](docsource/images/Akamai-entry-parameters-store-type-dialog-EnrollmentId-validation-options.svg)
+
+
+   ##### Contract ID
+   The Contract ID of your account in Akamai.
+
+   ![Akamai Entry Parameter - ContractId](docsource/images/Akamai-entry-parameters-store-type-dialog-ContractId.svg)
+   ![Akamai Entry Parameter - ContractId](docsource/images/Akamai-entry-parameters-store-type-dialog-ContractId-validation-options.svg)
+
+
+   ##### SANs
+   SANs for the new certificate. If multiple are supplied, they should be split with an ampersand character '&'
+
+   ![Akamai Entry Parameter - Sans](docsource/images/Akamai-entry-parameters-store-type-dialog-Sans.svg)
+   ![Akamai Entry Parameter - Sans](docsource/images/Akamai-entry-parameters-store-type-dialog-Sans-validation-options.svg)
+
+
+   ##### Admin - Address Line 1
+   Required field for Administrator contact.
+
+   ![Akamai Entry Parameter - admin-addressLineOne](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-addressLineOne.svg)
+   ![Akamai Entry Parameter - admin-addressLineOne](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-addressLineOne-validation-options.svg)
+
+
+   ##### Admin - Address Line 2
+   Optional field for Administrator contact.
+
+   ![Akamai Entry Parameter - admin-addressLineTwo](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-addressLineTwo.svg)
+   ![Akamai Entry Parameter - admin-addressLineTwo](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-addressLineTwo-validation-options.svg)
+
+
+   ##### Admin - City
+   Required field for Administrator contact.
+
+   ![Akamai Entry Parameter - admin-city](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-city.svg)
+   ![Akamai Entry Parameter - admin-city](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-city-validation-options.svg)
+
+
+   ##### Admin - Country
+   Required field for Administrator contact.
+
+   ![Akamai Entry Parameter - admin-country](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-country.svg)
+   ![Akamai Entry Parameter - admin-country](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-country-validation-options.svg)
+
+
+   ##### Admin - Email
+   Required field for Administrator contact.
+
+   ![Akamai Entry Parameter - admin-email](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-email.svg)
+   ![Akamai Entry Parameter - admin-email](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-email-validation-options.svg)
+
+
+   ##### Admin - First Name
+   Required field for Administrator contact.
+
+   ![Akamai Entry Parameter - admin-firstName](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-firstName.svg)
+   ![Akamai Entry Parameter - admin-firstName](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-firstName-validation-options.svg)
+
+
+   ##### Admin - Last Name
+   Required field for Administrator contact.
+
+   ![Akamai Entry Parameter - admin-lastName](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-lastName.svg)
+   ![Akamai Entry Parameter - admin-lastName](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-lastName-validation-options.svg)
+
+
+   ##### Admin - Organization Name
+   Required field for Administrator contact.
+
+   ![Akamai Entry Parameter - admin-organizationName](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-organizationName.svg)
+   ![Akamai Entry Parameter - admin-organizationName](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-organizationName-validation-options.svg)
+
+
+   ##### Admin - Phone
+   Required field for Administrator contact.
+
+   ![Akamai Entry Parameter - admin-phone](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-phone.svg)
+   ![Akamai Entry Parameter - admin-phone](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-phone-validation-options.svg)
+
+
+   ##### Admin - Postal Code
+   Required field for Administrator contact.
+
+   ![Akamai Entry Parameter - admin-postalCode](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-postalCode.svg)
+   ![Akamai Entry Parameter - admin-postalCode](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-postalCode-validation-options.svg)
+
+
+   ##### Admin - Region
+   Required field for Administrator contact.
+
+   ![Akamai Entry Parameter - admin-region](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-region.svg)
+   ![Akamai Entry Parameter - admin-region](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-region-validation-options.svg)
+
+
+   ##### Admin - Title
+   Required field for Administrator contact.
+
+   ![Akamai Entry Parameter - admin-title](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-title.svg)
+   ![Akamai Entry Parameter - admin-title](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-title-validation-options.svg)
+
+
+   ##### Org - Address Line 1
+   Required field for Organization contact.
+
+   ![Akamai Entry Parameter - org-addressLineOne](docsource/images/Akamai-entry-parameters-store-type-dialog-org-addressLineOne.svg)
+   ![Akamai Entry Parameter - org-addressLineOne](docsource/images/Akamai-entry-parameters-store-type-dialog-org-addressLineOne-validation-options.svg)
+
+
+   ##### Org - Address Line 2
+   Optional field for Organization contact.
+
+   ![Akamai Entry Parameter - org-addressLineTwo](docsource/images/Akamai-entry-parameters-store-type-dialog-org-addressLineTwo.svg)
+   ![Akamai Entry Parameter - org-addressLineTwo](docsource/images/Akamai-entry-parameters-store-type-dialog-org-addressLineTwo-validation-options.svg)
+
+
+   ##### Org - City
+   Required field for Organization contact.
+
+   ![Akamai Entry Parameter - org-city](docsource/images/Akamai-entry-parameters-store-type-dialog-org-city.svg)
+   ![Akamai Entry Parameter - org-city](docsource/images/Akamai-entry-parameters-store-type-dialog-org-city-validation-options.svg)
+
+
+   ##### Org - Country
+   Required field for Organization contact.
+
+   ![Akamai Entry Parameter - org-country](docsource/images/Akamai-entry-parameters-store-type-dialog-org-country.svg)
+   ![Akamai Entry Parameter - org-country](docsource/images/Akamai-entry-parameters-store-type-dialog-org-country-validation-options.svg)
+
+
+   ##### Org - Organization Name
+   Required field for Organization contact.
+
+   ![Akamai Entry Parameter - org-organizationName](docsource/images/Akamai-entry-parameters-store-type-dialog-org-organizationName.svg)
+   ![Akamai Entry Parameter - org-organizationName](docsource/images/Akamai-entry-parameters-store-type-dialog-org-organizationName-validation-options.svg)
+
+
+   ##### Org - Phone
+   Required field for Organization contact.
+
+   ![Akamai Entry Parameter - org-phone](docsource/images/Akamai-entry-parameters-store-type-dialog-org-phone.svg)
+   ![Akamai Entry Parameter - org-phone](docsource/images/Akamai-entry-parameters-store-type-dialog-org-phone-validation-options.svg)
+
+
+   ##### Org - Postal Code
+   Required field for Organization contact.
+
+   ![Akamai Entry Parameter - org-postalCode](docsource/images/Akamai-entry-parameters-store-type-dialog-org-postalCode.svg)
+   ![Akamai Entry Parameter - org-postalCode](docsource/images/Akamai-entry-parameters-store-type-dialog-org-postalCode-validation-options.svg)
+
+
+   ##### Org - Region
+   Required field for Organization contact.
+
+   ![Akamai Entry Parameter - org-region](docsource/images/Akamai-entry-parameters-store-type-dialog-org-region.svg)
+   ![Akamai Entry Parameter - org-region](docsource/images/Akamai-entry-parameters-store-type-dialog-org-region-validation-options.svg)
+
+
+   ##### Tech - Address Line 1
+   Required field for Akamai Tech contact.
+
+   ![Akamai Entry Parameter - tech-addressLineOne](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-addressLineOne.svg)
+   ![Akamai Entry Parameter - tech-addressLineOne](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-addressLineOne-validation-options.svg)
+
+
+   ##### Tech - Address Line 2
+   Optional field for Akamai Tech contact.
+
+   ![Akamai Entry Parameter - tech-addressLineTwo](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-addressLineTwo.svg)
+   ![Akamai Entry Parameter - tech-addressLineTwo](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-addressLineTwo-validation-options.svg)
+
+
+   ##### Tech - City
+   Required field for Akamai Tech contact.
+
+   ![Akamai Entry Parameter - tech-city](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-city.svg)
+   ![Akamai Entry Parameter - tech-city](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-city-validation-options.svg)
+
+
+   ##### Tech - Country
+   Required field for Akamai Tech contact.
+
+   ![Akamai Entry Parameter - tech-country](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-country.svg)
+   ![Akamai Entry Parameter - tech-country](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-country-validation-options.svg)
+
+
+   ##### Tech - Email
+   Required field for Akamai Tech contact. Must be an akamai.com email address.
+
+   ![Akamai Entry Parameter - tech-email](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-email.svg)
+   ![Akamai Entry Parameter - tech-email](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-email-validation-options.svg)
+
+
+   ##### Tech - First Name
+   Required field for Akamai Tech contact.
+
+   ![Akamai Entry Parameter - tech-firstName](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-firstName.svg)
+   ![Akamai Entry Parameter - tech-firstName](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-firstName-validation-options.svg)
+
+
+   ##### Tech - Last Name
+   Required field for Akamai Tech contact.
+
+   ![Akamai Entry Parameter - tech-lastName](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-lastName.svg)
+   ![Akamai Entry Parameter - tech-lastName](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-lastName-validation-options.svg)
+
+
+   ##### Tech - Organization Name
+   Required field for Akamai Tech contact.
+
+   ![Akamai Entry Parameter - tech-organizationName](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-organizationName.svg)
+   ![Akamai Entry Parameter - tech-organizationName](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-organizationName-validation-options.svg)
+
+
+   ##### Tech - Phone
+   Required field for Akamai Tech contact.
+
+   ![Akamai Entry Parameter - tech-phone](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-phone.svg)
+   ![Akamai Entry Parameter - tech-phone](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-phone-validation-options.svg)
+
+
+   ##### Tech - Postal Code
+   Required field for Akamai Tech contact.
+
+   ![Akamai Entry Parameter - tech-postalCode](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-postalCode.svg)
+   ![Akamai Entry Parameter - tech-postalCode](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-postalCode-validation-options.svg)
+
+
+   ##### Tech - Region
+   Required field for Akamai Tech contact.
+
+   ![Akamai Entry Parameter - tech-region](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-region.svg)
+   ![Akamai Entry Parameter - tech-region](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-region-validation-options.svg)
+
+
+   ##### Tech - Title
+   Required field for Akamai Tech contact.
+
+   ![Akamai Entry Parameter - tech-title](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-title.svg)
+   ![Akamai Entry Parameter - tech-title](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-title-validation-options.svg)
+
+
+   ##### Deployment Network
+   Required field for Deployment Network.
+
+   ![Akamai Entry Parameter - deployment-network](docsource/images/Akamai-entry-parameters-store-type-dialog-deployment-network.svg)
+   ![Akamai Entry Parameter - deployment-network](docsource/images/Akamai-entry-parameters-store-type-dialog-deployment-network-validation-options.svg)
+
 
 
    ##### Enrollment ID
@@ -517,7 +782,7 @@ the Keyfactor Command Portal
 
 1. **Download the latest Akamai Certificate Provisioning System (CPS) Universal Orchestrator extension from GitHub.**
 
-    Navigate to the [Akamai Certificate Provisioning System (CPS) Universal Orchestrator extension GitHub version page](https://github.com/Keyfactor/akamai-cps-orchestrator/releases/latest). Refer to the compatibility matrix below to determine the asset should be downloaded. Then, click the corresponding asset to download the zip archive.
+    Navigate to the [Akamai Certificate Provisioning System (CPS) Universal Orchestrator extension GitHub version page](https://github.com/Keyfactor/akamai-cps-orchestrator/releases/latest). Refer to the compatibility matrix below to determine which asset should be downloaded. Then, click the corresponding asset to download the zip archive.
 
    | Universal Orchestrator Version | Latest .NET version installed on the Universal Orchestrator server | `rollForward` condition in `Orchestrator.runtimeconfig.json` | `akamai-cps-orchestrator` .NET version to download |
    | --------- | ----------- | ----------- | ----------- |
@@ -544,21 +809,15 @@ the Keyfactor Command Portal
 
     Refer to [Starting/Restarting the Universal Orchestrator service](https://software.keyfactor.com/Core-OnPrem/Current/Content/InstallingAgents/NetCoreOrchestrator/StarttheService.htm).
 
-
 6. **(optional) PAM Integration**
 
     The Akamai Certificate Provisioning System (CPS) Universal Orchestrator extension is compatible with all supported Keyfactor PAM extensions to resolve PAM-eligible secrets. PAM extensions running on Universal Orchestrators enable secure retrieval of secrets from a connected PAM provider.
 
     To configure a PAM provider, [reference the Keyfactor Integration Catalog](https://keyfactor.github.io/integrations-catalog/content/pam) to select an extension and follow the associated instructions to install it on the Universal Orchestrator (remote).
 
-
 > The above installation steps can be supplemented by the [official Command documentation](https://software.keyfactor.com/Core-OnPrem/Current/Content/InstallingAgents/NetCoreOrchestrator/CustomExtensions.htm?Highlight=extensions).
 
-
-
 ## Defining Certificate Stores
-
-
 
 ### Store Creation
 
@@ -574,8 +833,8 @@ the Keyfactor Command Portal
 
     Click the Add button to add a new Certificate Store. Use the table below to populate the **Attributes** in the **Add** form.
 
-   | Attribute | Description                                             |
-   | --------- |---------------------------------------------------------|
+   | Attribute | Description |
+   | --------- | ----------- |
    | Category | Select "Akamai Certificate Provisioning Service" or the customized certificate store name from the previous step. |
    | Container | Optional container to associate certificate store with. |
    | Client Machine | The Client Machine field is the Akamai REST API URL. This should be equal to the "host" value from the API credentials file. |
@@ -586,8 +845,6 @@ the Keyfactor Command Portal
    | client_secret | The Akamai client_secret for authentication. |
 
 </details>
-
-
 
 #### Using kfutil CLI
 
@@ -621,7 +878,6 @@ the Keyfactor Command Portal
 
 </details>
 
-
 #### PAM Provider Eligible Fields
 <details><summary>Attributes eligible for retrieval by a PAM Provider on the Universal Orchestrator</summary>
 
@@ -638,21 +894,23 @@ Please refer to the **Universal Orchestrator (remote)** usage section ([PAM prov
 
 </details>
 
-
 > The content in this section can be supplemented by the [official Command documentation](https://software.keyfactor.com/Core-OnPrem/Current/Content/ReferenceGuide/Certificate%20Stores.htm?Highlight=certificate%20store).
-
 
 ### Extension Mechanics
 
 Adding new certificates to Akamai requires generating a key in Akamai CPS via the Reenrollment process in Keyfactor. 
 To start this process, go to the Certificate Store that the certificate should be added to. Select the certificate 
-store, and click the `Reenrollment` button to bring up the reenrollment dialog.
+store, and click the `Reenrollment` / `OKDG` button to bring up the reenrollment dialog.
 
 Change any `default` values as needed, and enter an `Enrollment ID` if an existing enrollment needs to be updated instead 
 of creating a new Enrollment. This is different from the `Slot ID` - the `Enrollment ID` is found by clicking on an 
 Active certificate in Akamai CPS, and looking at the `ID` value. The SAN entry needs to be filled out with the DNS value 
 you are using for the certificate's CN. If there are multiple DNS SANs, they should be separated with an ampersand (`&`). 
 Example: `www.example01.com&www.example02.com`
+
+> [!IMPORTANT]
+>
+> This extension only supports `RSA` and `ECC` key algorithms. Please make sure the targeted enrollment pattern or certificate template supports these key algorithms.
 
 #### Configure Renewal of Certificates using a Workflow
 Akamai does not support traditional certificate Renewal or one-click Renewal done in the Keyfactor Command platform. 
@@ -693,7 +951,6 @@ Currently, only the leaf certificate is returned from Keyfactor Command after en
 If the trust chain cannot be built using either of these methods, the orchestrator will still complete the enrollment, but a warning message will be returned indicating that the trust chain could not be built. Please ensure that the intermediate and root certificates are part of your system's trust store or have publicly available AIA information to allow the orchestrator to build the trust chain successfully.
 
 
-
 ## Use Cases
 
 The Akamai CPS orchestrator extension implements the following capabilities:
@@ -701,7 +958,6 @@ The Akamai CPS orchestrator extension implements the following capabilities:
 2. Reenrollment - Process a key generation request and create a new certificate with a Keyfactor CA. Two scenarios are supported:
     1. No Enrollment Id provided - create a new Enrollment and certificate in Akamai
     2. Existing Enrollment Id provided - renew an existing certificate in Akamai and update the Enrollment
-
 
 ## License
 
