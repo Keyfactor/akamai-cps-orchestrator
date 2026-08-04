@@ -15,6 +15,7 @@
 using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using akamai_cps_orchestrator.Tests.Builders;
 using Keyfactor.Extensions.Utilities.HttpInterface.Exceptions;
 using Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Factories;
 using Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs;
@@ -24,6 +25,7 @@ using Keyfactor.Orchestrators.Common.Enums;
 using Keyfactor.Orchestrators.Extensions;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Newtonsoft.Json;
 using Org.BouncyCastle.X509;
 using Xunit;
 using Xunit.Abstractions;
@@ -56,6 +58,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
     // Generated once per test class to avoid RSA key generation cost per test.
     private static readonly X509Certificate2 TestCert = CreateSelfSignedCert();
     private static readonly X509Certificate TestBcCert = CreateSelfSignedCertBouncyCastle(TestCert);
+    private static CertificateStore JobProperties;
 
     private readonly Mock<IAkamaiClientFactory> _mockFactory = new();
     private readonly Mock<IAkamaiClient> _mockClient = new();
@@ -122,8 +125,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
     [Fact]
     public void ProcessJob_WhenKeyTypeIsNotMappedToAkamaiValue_ReturnsFailure()
     {
-        var config = MakeReenrollmentConfig();
-        config.JobProperties["keyType"] = "foobar";
+        var config = MakeReenrollmentConfig(new ReenrollmentJobPropertiesBuilder().WithKeyType("foobar"));
 
         var result = GetReenrollmentClass().ProcessJob(config, _mockReenrollmentCSR.Object);
 
@@ -135,12 +137,36 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
 
     #region Existing Enrollments
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void ProcessJob_WhenContractIdIsNullOnStoreAndProperties_DoesNotErrorWhenUpdatingEnrollment(string? contractId)
+    {
+        SetupExistingEnrollmentPath("42", "200", MakeExistingEnrollment("42"));
+        
+        // If enrollment ID is not null, then it will be treated as an update – no contract ID is required in that case.
+        var propertiesBuilder = new ReenrollmentJobPropertiesBuilder()
+            .WithEnrollmentId("42")
+            .WithContractId(contractId);
+
+        var storeProperties = new AkamaiCertStorePropertiesBuilder()
+            .WithContractId(contractId)
+            .Build();
+        
+        var config = MakeReenrollmentConfig(propertiesBuilder, storeProperties);
+
+        var result = GetReenrollmentClass().ProcessJob(config, _mockReenrollmentCSR.Object);
+        
+        Assert.Equal(OrchestratorJobStatusJobResult.Success, result.Result);
+    }
+    
     [Fact]
     public void ProcessJob_WhenEnrollmentIdPresent_GetsExistingEnrollment()
     {
         SetupExistingEnrollmentPath("42", "200", MakeExistingEnrollment("42"));
 
-        GetReenrollmentClass().ProcessJob(MakeReenrollmentConfig(enrollmentId: "42"), _mockReenrollmentCSR.Object);
+        GetReenrollmentClass().ProcessJob(MakeReenrollmentConfig(new ReenrollmentJobPropertiesBuilder().WithEnrollmentId("42")), _mockReenrollmentCSR.Object);
 
         _mockClient.Verify(c => c.GetEnrollment("42"), Times.Once);
     }
@@ -152,7 +178,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
             .Setup(c => c.GetEnrollment(It.IsAny<string>()))
             .Throws(new Exception("Enrollment not found"));
 
-        var result = GetReenrollmentClass().ProcessJob(MakeReenrollmentConfig(enrollmentId: "42"), _mockReenrollmentCSR.Object);
+        var result = GetReenrollmentClass().ProcessJob(MakeReenrollmentConfig(new ReenrollmentJobPropertiesBuilder().WithEnrollmentId("42")), _mockReenrollmentCSR.Object);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
     }
@@ -168,7 +194,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
             .Returns(MakeCreatedEnrollment(enrollmentId: "42", changeId: "9002"));
         SetupClientForHappyPath("42", "9002");
 
-        GetReenrollmentClass().ProcessJob(MakeReenrollmentConfig(enrollmentId: "42"), _mockReenrollmentCSR.Object);
+        GetReenrollmentClass().ProcessJob(MakeReenrollmentConfig(new ReenrollmentJobPropertiesBuilder().WithEnrollmentId("42")), _mockReenrollmentCSR.Object);
 
         _mockClient.Verify(c => c.DeletePendingChange("42", "9001"), Times.Once);
         _mockClient.Verify(c => c.UpdateEnrollment("42", It.IsAny<Enrollment>()), Times.Exactly(2));
@@ -186,7 +212,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
             .Setup(c => c.DeletePendingChange("42", "9001"))
             .Throws(new Exception("Delete failed"));
 
-        var result = GetReenrollmentClass().ProcessJob(MakeReenrollmentConfig(enrollmentId: "42"), _mockReenrollmentCSR.Object);
+        var result = GetReenrollmentClass().ProcessJob(MakeReenrollmentConfig(new ReenrollmentJobPropertiesBuilder().WithEnrollmentId("42")), _mockReenrollmentCSR.Object);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
     }
@@ -199,7 +225,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
             .Setup(c => c.UpdateEnrollment("42", It.IsAny<Enrollment>()))
             .Throws(new Exception("Unexpected update error"));
 
-        var result = GetReenrollmentClass().ProcessJob(MakeReenrollmentConfig(enrollmentId: "42"), _mockReenrollmentCSR.Object);
+        var result = GetReenrollmentClass().ProcessJob(MakeReenrollmentConfig(new ReenrollmentJobPropertiesBuilder().WithEnrollmentId("42")), _mockReenrollmentCSR.Object);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
     }
@@ -208,6 +234,33 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
 
     #region New Enrollments
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void ProcessJob_WhenContractIdIsNullOnStoreAndProperties_ErrorsWhenCreatingEnrollment(string? contractId)
+    {
+        SetupNewEnrollmentPath("99", "100");
+        
+        // The integration will create a new enrollment when enrollment ID is null
+        var propertiesBuilder = new ReenrollmentJobPropertiesBuilder()
+            .WithEnrollmentId(null)
+            .WithContractId(contractId);
+
+        var storeProperties = new AkamaiCertStorePropertiesBuilder()
+            .WithContractId(contractId)
+            .Build();
+
+        var expectedError = "A Contract ID is required when creating an Akamai enrollment";
+        
+        var config = MakeReenrollmentConfig(propertiesBuilder, storeProperties);
+
+        var result = GetReenrollmentClass().ProcessJob(config, _mockReenrollmentCSR.Object);
+        
+        Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
+        Assert.Contains(expectedError, result.FailureMessage);
+    }
+    
     [Fact]
     public void ProcessJob_WhenNoEnrollmentId_CreatesNewEnrollment()
     {
@@ -241,6 +294,90 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
         var result = GetReenrollmentClass().ProcessJob(MakeReenrollmentConfig(), _mockReenrollmentCSR.Object);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
+    }
+    
+    #endregion
+    
+    #region ContractId Resolution
+    
+    [Fact]
+    public void ProcessJob_WhenContractIdIsNullOnStoreButDefinedInProperties_UsesPropertyValue()
+    {
+        var contractId = "contract-id";
+        
+        var propertiesBuilder = new ReenrollmentJobPropertiesBuilder()
+            .WithEnrollmentId(null)
+            .WithContractId(contractId);
+
+        var storeProperties = new AkamaiCertStorePropertiesBuilder()
+            .WithContractId(null)
+            .Build();
+        
+        var config = MakeReenrollmentConfig(propertiesBuilder, storeProperties);
+
+        GetReenrollmentClass().ProcessJob(config, _mockReenrollmentCSR.Object);
+        
+        _mockClient.Verify(x => x.CreateEnrollment(It.IsAny<Enrollment>(), contractId), Times.Once);
+    }
+    
+    [Fact]
+    public void ProcessJob_WhenContractIdIsDefinedOnStoreButIsNullInProperties_UsesStoreValue()
+    {
+        var contractId = "contract-id";
+        
+        var propertiesBuilder = new ReenrollmentJobPropertiesBuilder()
+            .WithEnrollmentId(null)
+            .WithContractId(null);
+
+        var storeProperties = new AkamaiCertStorePropertiesBuilder()
+            .WithContractId(contractId)
+            .Build();
+        
+        var config = MakeReenrollmentConfig(propertiesBuilder, storeProperties);
+
+        GetReenrollmentClass().ProcessJob(config, _mockReenrollmentCSR.Object);
+        
+        _mockClient.Verify(x => x.CreateEnrollment(It.IsAny<Enrollment>(), contractId), Times.Once);
+    }
+    
+    [Fact]
+    public void ProcessJob_WhenContractIdIsDefinedOnStoreAndProperties_UsesPropertyValue()
+    {
+        var contractId = "contract-id";
+        
+        // The value in the job properties should take precedence over the value in the store properties.
+        var propertiesBuilder = new ReenrollmentJobPropertiesBuilder()
+            .WithEnrollmentId(null)
+            .WithContractId(contractId);
+
+        var storeProperties = new AkamaiCertStorePropertiesBuilder()
+            .WithContractId("do-not-use")
+            .Build();
+        
+        var config = MakeReenrollmentConfig(propertiesBuilder, storeProperties);
+
+        GetReenrollmentClass().ProcessJob(config, _mockReenrollmentCSR.Object);
+        
+        _mockClient.Verify(x => x.CreateEnrollment(It.IsAny<Enrollment>(), contractId), Times.Once);
+    }
+    
+    [Fact]
+    public void ProcessJob_WhenCertStorePropertiesIsMissingContractIdInString_StillUsesJobPropertyValue()
+    {
+        var contractId = "contract-id";
+        
+        var propertiesBuilder = new ReenrollmentJobPropertiesBuilder()
+            .WithEnrollmentId(null)
+            .WithContractId(contractId);
+        
+        var config = MakeReenrollmentConfig(propertiesBuilder);
+        
+        // Construct an empty object to verify that if the certificate store properties are missing the contract ID, the job property value is still used.
+        config.CertificateStoreDetails.Properties = "{}";
+
+        GetReenrollmentClass().ProcessJob(config, _mockReenrollmentCSR.Object);
+        
+        _mockClient.Verify(x => x.CreateEnrollment(It.IsAny<Enrollment>(), contractId), Times.Once);
     }
     
     #endregion
@@ -476,7 +613,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
     {
         SetupExistingEnrollmentPath("42", "200", MakeExistingEnrollment("42"));
 
-        var result = GetReenrollmentClass().ProcessJob(MakeReenrollmentConfig(enrollmentId: "42"), _mockReenrollmentCSR.Object);
+        var result = GetReenrollmentClass().ProcessJob(MakeReenrollmentConfig(new ReenrollmentJobPropertiesBuilder().WithEnrollmentId("42")), _mockReenrollmentCSR.Object);
 
         Assert.Equal(OrchestratorJobStatusJobResult.Success, result.Result);
     }
@@ -531,7 +668,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
         existing.networkConfiguration.secureNetwork = "standard-tls";
         Enrollment? captured = null;
         SetupExistingEnrollmentPath("42", "200", existing, capture: e => captured = e);
-        var config = MakeReenrollmentConfig(enrollmentId: "42");
+        var config = MakeReenrollmentConfig(new ReenrollmentJobPropertiesBuilder().WithEnrollmentId("42"));
         config.JobProperties["deployment-network"] = "Enhanced TLS";
         
         _mockCertificateChainService
@@ -618,7 +755,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
         existing.networkConfiguration.secureNetwork = existingNetwork;
         Enrollment? captured = null;
         SetupExistingEnrollmentPath("42", "200", existing, capture: e => captured = e);
-        var config = MakeReenrollmentConfig(enrollmentId: "42");
+        var config = MakeReenrollmentConfig(new ReenrollmentJobPropertiesBuilder().WithEnrollmentId("42"));
         config.JobProperties["deployment-network"] = reenrollmentNetwork;
 
         var result = GetReenrollmentClass().ProcessJob(config, _mockReenrollmentCSR.Object);
@@ -640,7 +777,7 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
         existing.networkConfiguration.secureNetwork = existingNetwork;
         Enrollment? captured = null;
         SetupExistingEnrollmentPath("42", "200", existing, capture: e => captured = e);
-        var config = MakeReenrollmentConfig(enrollmentId: "42");
+        var config = MakeReenrollmentConfig(new ReenrollmentJobPropertiesBuilder().WithEnrollmentId("42"));
         config.JobProperties["deployment-network"] = reenrollmentNetwork;
 
         var result = GetReenrollmentClass().ProcessJob(config, _mockReenrollmentCSR.Object);
@@ -694,63 +831,24 @@ public class ReenrollmentTests : BaseJobTest<ReenrollmentTests>
             .Returns(_fakeChange);
     }
 
-    private static ReenrollmentJobConfiguration MakeReenrollmentConfig(string enrollmentId = null)
+    private static ReenrollmentJobConfiguration MakeReenrollmentConfig(
+        ReenrollmentJobPropertiesBuilder? jobProperties = null, AkamaiCertStoreProperties? properties = null)
     {
-        var props = new Dictionary<string, object>
+        var props = (jobProperties ?? new ReenrollmentJobPropertiesBuilder()).Build();
+
+        properties ??= new AkamaiCertStorePropertiesBuilder()
+            .Build();
+
+        JobProperties = new CertificateStore
         {
-            ["subjectText"] = "CN=test.example.com,O=TestOrg,OU=TestOU,L=TestCity,ST=TestState,C=US",
-            ["keyType"] = "RSA",
-            ["ContractId"] = "contract-123",
-            ["Sans"] = "test.example.com&www.test.example.com",
-            // admin contact
-            ["admin-addressLineOne"] = "123 Main St",
-            ["admin-addressLineTwo"] = null,
-            ["admin-city"] = "TestCity",
-            ["admin-country"] = "US",
-            ["admin-email"] = "admin@test.com",
-            ["admin-firstName"] = "Admin",
-            ["admin-lastName"] = "User",
-            ["admin-organizationName"] = "TestOrg",
-            ["admin-phone"] = "555-0100",
-            ["admin-postalCode"] = "12345",
-            ["admin-region"] = "TestState",
-            ["admin-title"] = "Admin",
-            // org contact
-            ["org-addressLineOne"] = "123 Main St",
-            ["org-addressLineTwo"] = null,
-            ["org-city"] = "TestCity",
-            ["org-country"] = "US",
-            ["org-organizationName"] = "TestOrg",
-            ["org-phone"] = "555-0100",
-            ["org-postalCode"] = "12345",
-            ["org-region"] = "TestState",
-            // tech contact
-            ["tech-addressLineOne"] = "123 Main St",
-            ["tech-addressLineTwo"] = null,
-            ["tech-city"] = "TestCity",
-            ["tech-country"] = "US",
-            ["tech-email"] = "tech@test.com",
-            ["tech-firstName"] = "Tech",
-            ["tech-lastName"] = "User",
-            ["tech-organizationName"] = "TestOrg",
-            ["tech-phone"] = "555-0100",
-            ["tech-postalCode"] = "12345",
-            ["tech-region"] = "TestState",
-            ["tech-title"] = "Tech",
+            Properties = JsonConvert.SerializeObject(properties),
+            ClientMachine = "test.akamai.example.com",
+            StorePath = "Production",
         };
-
-        if (enrollmentId != null)
-            props["EnrollmentId"] = enrollmentId;
-
         return new ReenrollmentJobConfiguration
         {
             JobHistoryId = 1,
-            CertificateStoreDetails = new CertificateStore
-            {
-                Properties = "{}",
-                ClientMachine = "test.akamai.example.com",
-                StorePath = "Production",
-            },
+            CertificateStoreDetails = JobProperties,
             JobProperties = props,
         };
     }
