@@ -56,6 +56,16 @@ curl -s -X POST "https://${KEYFACTOR_HOSTNAME}/${KEYFACTOR_API_PATH}/Certificate
       "Required": true,
       "IsPAMEligible": false,
       "Description": "The Akamai client_secret for authentication."
+    },
+    {
+      "Name": "ContractId",
+      "DisplayName": "Contract ID",
+      "Type": "String",
+      "DependsOn": "",
+      "DefaultValue": "",
+      "Required": false,
+      "IsPAMEligible": false,
+      "Description": "The default Akamai Contract ID for the certificate store. When performing re-enrollment, the Contract ID entry parameter will take precedence."
     }
   ],
   "EntryParameters": [
@@ -73,16 +83,15 @@ curl -s -X POST "https://${KEYFACTOR_HOSTNAME}/${KEYFACTOR_API_PATH}/Certificate
     },
     {
       "Name": "ContractId",
-      "DisplayName": "Contract ID",
+      "DisplayName": "Contract ID Override",
       "Type": "String",
       "RequiredWhen": {
         "HasPrivateKey": false,
         "OnAdd": false,
         "OnRemove": false,
-        "OnReenrollment": true
+        "OnReenrollment": false
       },
-      "DefaultValue": "SET-DEFAULT",
-      "Description": "The Contract ID of your account in Akamai."
+      "Description": "The Contract ID of your account in Akamai. If a Contract ID is defined on the certificate store, the value of this parameter will take precedence. If a Contract ID is not defined on the certificate store, a value is required for this parameter."
     },
     {
       "Name": "Sans",
