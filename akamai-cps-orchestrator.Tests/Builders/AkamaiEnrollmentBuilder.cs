@@ -20,6 +20,10 @@ public class AkamaiEnrollmentBuilder
 {
     private string _id = "1";
     private NetworkConfiguration _networkConfiguration = new ();
+    private ContactInfo _adminContact = new ();
+    private ContactInfo _org = new ();
+    private ContactInfo _techContact = new ();
+    private EnrollmentCSR _csr = new ();
 
     public AkamaiEnrollmentBuilder WithId(string id)
     {
@@ -33,12 +37,40 @@ public class AkamaiEnrollmentBuilder
         return this;
     }
 
+    public AkamaiEnrollmentBuilder WithAdminContact(ContactInfo adminContact)
+    {
+        _adminContact = adminContact;
+        return this;
+    }
+
+    public AkamaiEnrollmentBuilder WithOrgContact(ContactInfo org)
+    {
+        _org = org;
+        return this;
+    }
+
+    public AkamaiEnrollmentBuilder WithTechContact(ContactInfo techContact)
+    {
+        _techContact = techContact;
+        return this;
+    }
+
+    public AkamaiEnrollmentBuilder WithSans(string[] sans)
+    {
+        _csr.sans = sans;
+        return this;
+    }
+
     public Enrollment Build()
     {
         return new Enrollment
         {
             id = _id,
             networkConfiguration = _networkConfiguration,
+            adminContact = _adminContact,
+            org = _org,
+            techContact = _techContact,
+            csr = _csr,
         };
     }
 }

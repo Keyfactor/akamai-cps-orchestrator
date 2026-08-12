@@ -55,6 +55,51 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
         {
             public const string EnrollmentId = "EnrollmentId";
             public const string DeploymentNetwork = "deployment-network";
+            public const string Sans = "Sans";
+
+            public static class Admin
+            {
+                public const string AddressLineOne = "admin-addressLineOne";
+                public const string AddressLineTwo = "admin-addressLineTwo";
+                public const string City = "admin-city";
+                public const string Country = "admin-country";
+                public const string Email = "admin-email";
+                public const string FirstName = "admin-firstName";
+                public const string LastName = "admin-lastName";
+                public const string OrganizationName = "admin-organizationName";
+                public const string Phone = "admin-phone";
+                public const string PostalCode = "admin-postalCode";
+                public const string Region = "admin-region";
+                public const string Title = "admin-title";
+            }
+
+            public static class Org
+            {
+                public const string AddressLineOne = "org-addressLineOne";
+                public const string AddressLineTwo = "org-addressLineTwo";
+                public const string City = "org-city";
+                public const string Country = "org-country";
+                public const string OrganizationName = "org-organizationName";
+                public const string Phone = "org-phone";
+                public const string PostalCode = "org-postalCode";
+                public const string Region = "org-region";
+            }
+
+            public static class Tech
+            {
+                public const string AddressLineOne = "tech-addressLineOne";
+                public const string AddressLineTwo = "tech-addressLineTwo";
+                public const string City = "tech-city";
+                public const string Country = "tech-country";
+                public const string Email = "tech-email";
+                public const string FirstName = "tech-firstName";
+                public const string LastName = "tech-lastName";
+                public const string OrganizationName = "tech-organizationName";
+                public const string Phone = "tech-phone";
+                public const string PostalCode = "tech-postalCode";
+                public const string Region = "tech-region";
+                public const string Title = "tech-title";
+            }
         }
 
         public static class DeploymentNetwork

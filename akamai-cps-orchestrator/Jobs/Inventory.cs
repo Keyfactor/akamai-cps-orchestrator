@@ -98,6 +98,15 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                     {
                         _logger.LogTrace($"Found certificate for enrollment {enrollment.id} of type {enrollmentType}.");
                         var x509Cert = new X509Certificate2(Encoding.UTF8.GetBytes(cert.certificate));
+                        
+                        _logger.LogTrace($"Built x509 certificate for enrollment {enrollment.id}. Building entry parameters from enrollment data");
+                        
+                        var entryParameters = BuildEntryParameters(enrollment);
+
+                        var alias = x509Cert.Thumbprint;
+                        
+                        _logger.LogDebug($"Adding enrollment {enrollment.id} to inventory with alias {alias} and {entryParameters.Count} entry parameters.");
+                        
                         inventory.Add(
                             new CurrentInventoryItem()
                             {
@@ -106,11 +115,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                                 PrivateKeyEntry = false,
                                 UseChainLevel = false,
                                 Alias = x509Cert.Thumbprint,
-                                Parameters = new Dictionary<string, object>
-                                {
-                                    { Constants.EntryParameters.EnrollmentId, enrollment.id },
-                                    { Constants.EntryParameters.DeploymentNetwork, MapSecureNetworkToCommandValue(enrollment) }
-                                }
+                                Parameters = entryParameters,
                             }
                         );
                     }
@@ -154,9 +159,76 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                 case Constants.DeploymentNetwork.Akamai.EnhancedTLS:
                     return Constants.DeploymentNetwork.Command.EnhancedTLS;
                 default:
+                    _logger.LogError($"SecureNetwork value {secureNetwork} on enrollment ID {enrollment.id} not recognized.");
                     throw new ArgumentException(
                         $"Could not map SecureNetwork value '{secureNetwork}' on enrollment ID {enrollment.id} to a valid deployment-network value");
             }
+        }
+
+        private Dictionary<string, object> BuildEntryParameters(Enrollment enrollment)
+        {
+            _logger.LogTrace($"Building entry parameters for enrollment {enrollment.id}");
+            
+            var parameters = new Dictionary<string, object>
+            {
+                { Constants.EntryParameters.EnrollmentId, enrollment.id },
+                { Constants.EntryParameters.DeploymentNetwork, MapSecureNetworkToCommandValue(enrollment) },
+                { Constants.EntryParameters.Sans, string.Join("&", enrollment.csr.sans) },
+            };
+
+            AddAdminContactParameters(parameters, enrollment.adminContact);
+            AddOrgContactParameters(parameters, enrollment.org);
+            AddTechContactParameters(parameters, enrollment.techContact);
+            
+            _logger.LogDebug($"Successfully built entry parameters for {enrollment.id}.");
+
+            return parameters;
+        }
+
+        // --- Contact parameter mappings (mirror BuildAdminContact/BuildOrgContact/BuildTechContact in Reenrollment.cs) ---
+
+        private void AddAdminContactParameters(Dictionary<string, object> parameters, ContactInfo contact)
+        {
+            parameters.Add(Constants.EntryParameters.Admin.AddressLineOne, contact.addressLineOne);
+            parameters.Add(Constants.EntryParameters.Admin.AddressLineTwo, contact.addressLineTwo);
+            parameters.Add(Constants.EntryParameters.Admin.City, contact.city);
+            parameters.Add(Constants.EntryParameters.Admin.Country, contact.country);
+            parameters.Add(Constants.EntryParameters.Admin.Email, contact.email);
+            parameters.Add(Constants.EntryParameters.Admin.FirstName, contact.firstName);
+            parameters.Add(Constants.EntryParameters.Admin.LastName, contact.lastName);
+            parameters.Add(Constants.EntryParameters.Admin.OrganizationName, contact.organizationName);
+            parameters.Add(Constants.EntryParameters.Admin.Phone, contact.phone);
+            parameters.Add(Constants.EntryParameters.Admin.PostalCode, contact.postalCode);
+            parameters.Add(Constants.EntryParameters.Admin.Region, contact.region);
+            parameters.Add(Constants.EntryParameters.Admin.Title, contact.title);
+        }
+
+        private void AddOrgContactParameters(Dictionary<string, object> parameters, ContactInfo contact)
+        {
+            parameters.Add(Constants.EntryParameters.Org.AddressLineOne, contact.addressLineOne);
+            parameters.Add(Constants.EntryParameters.Org.AddressLineTwo, contact.addressLineTwo);
+            parameters.Add(Constants.EntryParameters.Org.City, contact.city);
+            parameters.Add(Constants.EntryParameters.Org.Country, contact.country);
+            parameters.Add(Constants.EntryParameters.Org.OrganizationName, contact.name);
+            parameters.Add(Constants.EntryParameters.Org.Phone, contact.phone);
+            parameters.Add(Constants.EntryParameters.Org.PostalCode, contact.postalCode);
+            parameters.Add(Constants.EntryParameters.Org.Region, contact.region);
+        }
+
+        private void AddTechContactParameters(Dictionary<string, object> parameters, ContactInfo contact)
+        {
+            parameters.Add(Constants.EntryParameters.Tech.AddressLineOne, contact.addressLineOne);
+            parameters.Add(Constants.EntryParameters.Tech.AddressLineTwo, contact.addressLineTwo);
+            parameters.Add(Constants.EntryParameters.Tech.City, contact.city);
+            parameters.Add(Constants.EntryParameters.Tech.Country, contact.country);
+            parameters.Add(Constants.EntryParameters.Tech.Email, contact.email);
+            parameters.Add(Constants.EntryParameters.Tech.FirstName, contact.firstName);
+            parameters.Add(Constants.EntryParameters.Tech.LastName, contact.lastName);
+            parameters.Add(Constants.EntryParameters.Tech.OrganizationName, contact.organizationName);
+            parameters.Add(Constants.EntryParameters.Tech.Phone, contact.phone);
+            parameters.Add(Constants.EntryParameters.Tech.PostalCode, contact.postalCode);
+            parameters.Add(Constants.EntryParameters.Tech.Region, contact.region);
+            parameters.Add(Constants.EntryParameters.Tech.Title, contact.title);
         }
     }
 }
