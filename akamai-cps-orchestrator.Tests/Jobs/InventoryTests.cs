@@ -14,13 +14,13 @@
 
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using akamai_cps_orchestrator.Tests.Builders;
 using Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Factories;
 using Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs;
 using Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models;
 using Keyfactor.Orchestrators.Common.Enums;
 using Keyfactor.Orchestrators.Extensions;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 using Xunit.Abstractions;
@@ -31,6 +31,9 @@ public class InventoryTests : BaseJobTest<InventoryTests>
 {
     // Generated once per test class to avoid RSA key generation cost per test.
     private static readonly string SelfSignedCertPem = GenerateSelfSignedCertPem();
+
+    private static readonly CertificateInfo SelfSignedCert =
+        new AkamaiCertificateInfoBuilder().WithCertificate(SelfSignedCertPem).Build();
 
     private readonly Mock<IAkamaiClientFactory> _mockFactory;
     private readonly Mock<IAkamaiClient> _mockClient;
@@ -83,9 +86,10 @@ public class InventoryTests : BaseJobTest<InventoryTests>
     [Fact]
     public void ProcessJob_WhenGetCertificateThrows_ReturnsFailure()
     {
+        var enollment1 = new AkamaiEnrollmentBuilder().WithId("1").Build();
         _mockClient
             .Setup(c => c.GetEnrollments())
-            .Returns(new[] { new Enrollment { id = "1" } });
+            .Returns([enollment1]);
         _mockClient
             .Setup(c => c.GetCertificate("1"))
             .Throws(new Exception("Certificate fetch failed"));
@@ -99,9 +103,13 @@ public class InventoryTests : BaseJobTest<InventoryTests>
     [Fact]
     public void ProcessJob_WhenAllCertificatesNull_SubmitsEmptyInventory()
     {
+        var enrollment1 = new AkamaiEnrollmentBuilder().WithId("1").Build();
+        var enrollment2 = new AkamaiEnrollmentBuilder().WithId("2").Build();
+        
         _mockClient
             .Setup(c => c.GetEnrollments())
-            .Returns(new[] { new Enrollment { id = "1" }, new Enrollment { id = "2" } });
+            .Returns([enrollment1, enrollment2]);
+        
         _mockClient
             .Setup(c => c.GetCertificate(It.IsAny<string>()))
             .Returns((CertificateInfo)null);
@@ -116,20 +124,23 @@ public class InventoryTests : BaseJobTest<InventoryTests>
     [Fact]
     public void ProcessJob_WhenSomeCertificatesNull_SkipsNullEntries()
     {
+        var enrollment1 = new AkamaiEnrollmentBuilder().WithId("1").Build();
+        var enrollment2 = new AkamaiEnrollmentBuilder().WithId("2").Build();
+        var enrollment3 = new AkamaiEnrollmentBuilder().WithId("3").Build();
+        
         _mockClient
             .Setup(c => c.GetEnrollments())
-            .Returns(new[]
-            {
-                new Enrollment { id = "1" },
-                new Enrollment { id = "2" },
-                new Enrollment { id = "3" },
-            });
-        _mockClient.Setup(c => c.GetCertificate("1"))
-            .Returns(new CertificateInfo { certificate = SelfSignedCertPem });
-        _mockClient.Setup(c => c.GetCertificate("2"))
+            .Returns([
+                enrollment1,
+                enrollment2,
+                enrollment3
+            ]);
+        _mockClient.Setup(c => c.GetCertificate(enrollment1.id))
+            .Returns(SelfSignedCert);
+        _mockClient.Setup(c => c.GetCertificate(enrollment2.id))
             .Returns((CertificateInfo)null);
-        _mockClient.Setup(c => c.GetCertificate("3"))
-            .Returns(new CertificateInfo { certificate = SelfSignedCertPem });
+        _mockClient.Setup(c => c.GetCertificate(enrollment3.id))
+            .Returns(SelfSignedCert);
 
         IEnumerable<CurrentInventoryItem> submitted = null;
         var job = new Inventory(Logger, _mockFactory.Object);
@@ -141,19 +152,20 @@ public class InventoryTests : BaseJobTest<InventoryTests>
     [Fact]
     public void ProcessJob_WhenCertificatesPresent_SetsEnrollmentIdParameter()
     {
+        var enrollment = new AkamaiEnrollmentBuilder().WithId("1").Build();
         _mockClient
             .Setup(c => c.GetEnrollments())
-            .Returns(new[] { new Enrollment { id = "42" } });
+            .Returns([enrollment]);
         _mockClient
-            .Setup(c => c.GetCertificate("42"))
-            .Returns(new CertificateInfo { certificate = SelfSignedCertPem });
+            .Setup(c => c.GetCertificate(enrollment.id))
+            .Returns(new AkamaiCertificateInfoBuilder().WithCertificate(SelfSignedCertPem).Build());
 
         IEnumerable<CurrentInventoryItem> submitted = null;
         var job = new Inventory(Logger, _mockFactory.Object);
         job.ProcessJob(MakeInventoryConfig(), items => { submitted = items; return true; });
 
         Assert.Single(submitted);
-        Assert.Equal("42", submitted.First().Parameters["EnrollmentId"].ToString());
+        Assert.Equal(enrollment.id, submitted.First().Parameters["EnrollmentId"].ToString());
     }
 
     [Fact]

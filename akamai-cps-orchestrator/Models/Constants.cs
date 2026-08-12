@@ -22,32 +22,32 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
     {
         public static class Endpoints
         {
-            public static string Enrollments = "/cps/v2/enrollments";
+            public const string Enrollments = "/cps/v2/enrollments";
 
             // str replace {0} with enrollmentId
-            public static string Changes = Enrollments + "/{0}/changes";
+            public const string Changes = Enrollments + "/{0}/changes";
 
             // str replace {1} with changeId
             // 'third-party-csr' is a param for getting a Third-Party csr
-            public static string GetChange = Changes + "/{1}/input/info/third-party-csr";
+            public const string GetChange = Changes + "/{1}/input/info/third-party-csr";
 
             // str replace {1} with changeId
             // 'third-party-cert-and-trust-chain' is a param for uploading a Third-Party cert
-            public static string UpdateChange = Changes + "/{1}/input/update/third-party-cert-and-trust-chain";
+            public const string UpdateChange = Changes + "/{1}/input/update/third-party-cert-and-trust-chain";
             // 'post-verification-warnings-ack' is a param for acknowleging warnings after uploading a cert
-            public static string AcknowledgePostVerification = Changes + "/{1}/input/update/post-verification-warnings-ack";
+            public const string AcknowledgePostVerification = Changes + "/{1}/input/update/post-verification-warnings-ack";
 
             // str replace {1} with changeId
-            public static string UpdateDeployment = Changes + "/{1}/deployment-schedule";
+            public const string UpdateDeployment = Changes + "/{1}/deployment-schedule";
 
             // str replace {0} with enrollmentId
-            public static string Deployments = Enrollments + "/{0}/deployments";
+            public const string Deployments = Enrollments + "/{0}/deployments";
         }
 
         public static class StorePaths
         {
-            public static string Production = "Production";
-            public static string Staging = "Staging";
+            public const string Production = "Production";
+            public const string Staging = "Staging";
         }
     }
 }
