@@ -19,10 +19,17 @@ namespace akamai_cps_orchestrator.Tests.Builders;
 public class AkamaiEnrollmentBuilder
 {
     private string _id = "1";
+    private NetworkConfiguration _networkConfiguration = new ();
 
     public AkamaiEnrollmentBuilder WithId(string id)
     {
         _id = id;
+        return this;
+    }
+
+    public AkamaiEnrollmentBuilder WithSecureNetwork(string secureNetwork)
+    {
+        _networkConfiguration.secureNetwork = secureNetwork;
         return this;
     }
 
@@ -31,6 +38,7 @@ public class AkamaiEnrollmentBuilder
         return new Enrollment
         {
             id = _id,
+            networkConfiguration = _networkConfiguration,
         };
     }
 }

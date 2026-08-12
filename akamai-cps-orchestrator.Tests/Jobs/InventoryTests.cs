@@ -32,7 +32,7 @@ public class InventoryTests : BaseJobTest<InventoryTests>
     // Generated once per test class to avoid RSA key generation cost per test.
     private static readonly string SelfSignedCertPem = GenerateSelfSignedCertPem();
 
-    private static readonly CertificateInfo SelfSignedCert =
+    private static readonly CertificateInfo SelfSignedCertInfo =
         new AkamaiCertificateInfoBuilder().WithCertificate(SelfSignedCertPem).Build();
 
     private readonly Mock<IAkamaiClientFactory> _mockFactory;
@@ -136,11 +136,11 @@ public class InventoryTests : BaseJobTest<InventoryTests>
                 enrollment3
             ]);
         _mockClient.Setup(c => c.GetCertificate(enrollment1.id))
-            .Returns(SelfSignedCert);
+            .Returns(SelfSignedCertInfo);
         _mockClient.Setup(c => c.GetCertificate(enrollment2.id))
             .Returns((CertificateInfo)null);
         _mockClient.Setup(c => c.GetCertificate(enrollment3.id))
-            .Returns(SelfSignedCert);
+            .Returns(SelfSignedCertInfo);
 
         IEnumerable<CurrentInventoryItem> submitted = null;
         var job = new Inventory(Logger, _mockFactory.Object);
@@ -148,25 +148,45 @@ public class InventoryTests : BaseJobTest<InventoryTests>
 
         Assert.Equal(2, submitted.Count());
     }
+    
+    #region Entry Parameters
 
     [Fact]
     public void ProcessJob_WhenCertificatesPresent_SetsEnrollmentIdParameter()
     {
         var enrollment = new AkamaiEnrollmentBuilder().WithId("1").Build();
-        _mockClient
-            .Setup(c => c.GetEnrollments())
-            .Returns([enrollment]);
-        _mockClient
-            .Setup(c => c.GetCertificate(enrollment.id))
-            .Returns(new AkamaiCertificateInfoBuilder().WithCertificate(SelfSignedCertPem).Build());
+        SetupHappyPath(enrollment, SelfSignedCertInfo);
 
-        IEnumerable<CurrentInventoryItem> submitted = null;
-        var job = new Inventory(Logger, _mockFactory.Object);
-        job.ProcessJob(MakeInventoryConfig(), items => { submitted = items; return true; });
-
-        Assert.Single(submitted);
-        Assert.Equal(enrollment.id, submitted.First().Parameters["EnrollmentId"].ToString());
+        AssertEntryParameter(Constants.EntryParameters.EnrollmentId, enrollment.id);
     }
+    
+    [Theory]
+    [InlineData(Constants.DeploymentNetwork.Akamai.StandardTLS, Constants.DeploymentNetwork.Command.StandardTLS)]
+    [InlineData(Constants.DeploymentNetwork.Akamai.EnhancedTLS, Constants.DeploymentNetwork.Command.EnhancedTLS)]
+    public void ProcessJob_WhenSecureNetworkIsSet_SetsDeploymentNetworkParameter(string secureNetwork, string expectedDeploymentNetwork)
+    {
+        var enrollment = new AkamaiEnrollmentBuilder().WithSecureNetwork(secureNetwork).Build();
+        SetupHappyPath(enrollment, SelfSignedCertInfo);
+
+        AssertEntryParameter(Constants.EntryParameters.DeploymentNetwork, expectedDeploymentNetwork);
+    }
+    
+    [Fact]
+    public void ProcessJob_WhenSecureNetworkCannotBeMapped_ThrowsException()
+    {
+        string secureNetwork = "foobar";
+        var enrollment = new AkamaiEnrollmentBuilder().WithId("1").WithSecureNetwork(secureNetwork).Build();
+        SetupHappyPath(enrollment, SelfSignedCertInfo);
+
+        var job = new Inventory(Logger, _mockFactory.Object);
+        var result = job.ProcessJob(MakeInventoryConfig(), _ => false);
+        
+        Assert.Equal(OrchestratorJobStatusJobResult.Failure, result.Result);
+        Assert.Contains($"Could not map SecureNetwork value '{secureNetwork}' on enrollment ID {enrollment.id} to a valid deployment-network value",
+            result.FailureMessage);
+    }
+    
+    #endregion
 
     [Fact]
     public void ProcessJob_WhenSubmitInventoryReturnsFalse_ReturnsFailure()
@@ -195,6 +215,25 @@ public class InventoryTests : BaseJobTest<InventoryTests>
     }
 
     // --- Helpers ---
+
+    private void SetupHappyPath(Enrollment enrollment, CertificateInfo certInfo)
+    {
+        _mockClient
+            .Setup(c => c.GetEnrollments())
+            .Returns([enrollment]);
+        _mockClient
+            .Setup(c => c.GetCertificate(enrollment.id))
+            .Returns(certInfo);
+    }
+
+    private void AssertEntryParameter(string entryParameterKey, string expectedValue)
+    {
+        IEnumerable<CurrentInventoryItem> submitted = null;
+        var job = new Inventory(Logger, _mockFactory.Object);
+        job.ProcessJob(MakeInventoryConfig(), items => { submitted = items; return true; });
+        
+        Assert.Equal(expectedValue, submitted.First().Parameters[entryParameterKey].ToString());
+    }
 
     private static InventoryJobConfiguration MakeInventoryConfig(string storePath = "Production")
     {

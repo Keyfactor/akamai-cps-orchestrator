@@ -92,7 +92,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             string enrollmentId;
             bool secureNetworkMismatch;
             CreatedEnrollment createdEnrollment;
-            bool hasExistingEnrollment = allJobProps.TryGetValue("EnrollmentId", out var existingEnrollmentIdObj)
+            bool hasExistingEnrollment = allJobProps.TryGetValue(Constants.EntryParameters.EnrollmentId, out var existingEnrollmentIdObj)
                                          && existingEnrollmentIdObj != null;
             try
             {
@@ -270,11 +270,11 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             // Resolve the optional deployment network parameter.
             // Default to "standard-tls" for backward compatibility with job templates that
             // predate this field — omitting it avoids silently downgrading Enhanced TLS enrollments.
-            if (jobProps.TryGetValue("deployment-network", out var deploymentNetworkRaw)
+            if (jobProps.TryGetValue(Constants.EntryParameters.DeploymentNetwork, out var deploymentNetworkRaw)
                 && deploymentNetworkRaw != null
                 && !string.IsNullOrWhiteSpace(deploymentNetworkRaw.ToString()))
             {
-                enrollment.networkConfiguration.secureNetwork = ParseSecureNetwork(deploymentNetworkRaw.ToString());
+                enrollment.networkConfiguration.secureNetwork = MapSecureNetworkToAkamaiValue(deploymentNetworkRaw.ToString());
             }
             _logger.LogDebug("Deployment network resolved to: {secureNetwork}.",
                 enrollment.networkConfiguration.secureNetwork);
@@ -615,10 +615,10 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
 
         private static string ExtractLastPathSegment(string url) => url.Split('/')[^1];
 
-        private static string ParseSecureNetwork(string displayValue) => displayValue switch
+        private static string MapSecureNetworkToAkamaiValue(string displayValue) => displayValue switch
         {
-            "Standard TLS" => "standard-tls",
-            "Enhanced TLS" => "enhanced-tls",
+            Constants.DeploymentNetwork.Command.StandardTLS => Constants.DeploymentNetwork.Akamai.StandardTLS,
+            Constants.DeploymentNetwork.Command.EnhancedTLS => Constants.DeploymentNetwork.Akamai.EnhancedTLS,
             _ => throw new ArgumentException($"Unrecognized deployment network '{displayValue}'. Expected 'Standard TLS' or 'Enhanced TLS'.")
         };
     }

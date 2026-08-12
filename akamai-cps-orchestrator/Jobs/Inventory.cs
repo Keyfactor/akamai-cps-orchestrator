@@ -108,7 +108,8 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                                 Alias = x509Cert.Thumbprint,
                                 Parameters = new Dictionary<string, object>
                                 {
-                                    { "EnrollmentId", enrollment.id }
+                                    { Constants.EntryParameters.EnrollmentId, enrollment.id },
+                                    { Constants.EntryParameters.DeploymentNetwork, MapSecureNetworkToCommandValue(enrollment) }
                                 }
                             }
                         );
@@ -140,6 +141,21 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                 string errorMessage = "SubmitInventory Invoke did not report a success.";
                 _logger.LogError(errorMessage);
                 return Failure(errorMessage);
+            }
+        }
+
+        private string MapSecureNetworkToCommandValue(Enrollment enrollment)
+        {
+            string secureNetwork = enrollment.networkConfiguration.secureNetwork;
+            switch (secureNetwork)
+            {
+                case Constants.DeploymentNetwork.Akamai.StandardTLS:
+                    return Constants.DeploymentNetwork.Command.StandardTLS;
+                case Constants.DeploymentNetwork.Akamai.EnhancedTLS:
+                    return Constants.DeploymentNetwork.Command.EnhancedTLS;
+                default:
+                    throw new ArgumentException(
+                        $"Could not map SecureNetwork value '{secureNetwork}' on enrollment ID {enrollment.id} to a valid deployment-network value");
             }
         }
     }

@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+// ReSharper disable InconsistentNaming
 
 namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
 {
@@ -48,6 +49,27 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models
         {
             public const string Production = "Production";
             public const string Staging = "Staging";
+        }
+
+        public static class EntryParameters
+        {
+            public const string EnrollmentId = "EnrollmentId";
+            public const string DeploymentNetwork = "deployment-network";
+        }
+
+        public static class DeploymentNetwork
+        {
+            public static class Akamai
+            {
+                public const string StandardTLS = "standard-tls";
+                public const string EnhancedTLS = "enhanced-tls";
+            }
+
+            public static class Command
+            {
+                public const string StandardTLS = "Standard TLS";
+                public const string EnhancedTLS = "Enhanced TLS";
+            }
         }
     }
 }
