@@ -61,6 +61,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
         {
             JobHistoryId = jobConfig.JobHistoryId;
             var allJobProps = jobConfig.JobProperties;
+            var certStore = jobConfig.CertificateStoreDetails;
 
             // Create the Akamai API client.
             IAkamaiClient client;
@@ -79,7 +80,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             string contractId, keyType;
             try
             {
-                (reenrollment, contractId, keyType) = BuildEnrollmentRequest(allJobProps);
+                (reenrollment, contractId, keyType) = BuildEnrollmentRequest(jobConfig);
             }
             catch (Exception e)
             {
@@ -226,14 +227,19 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
         /// Parses the Enrollment object, contract ID, and key type from job properties.
         /// Throws <see cref="ArgumentException"/> if any required field is missing.
         /// </summary>
-        private (Enrollment enrollment, string contractId, string keyType) BuildEnrollmentRequest(
-            Dictionary<string, object> jobProps)
+        private (Enrollment enrollment, string? contractId, string keyType) BuildEnrollmentRequest(
+            ReenrollmentJobConfiguration jobConfig)
         {
+            _logger.MethodEntry();
+
+            var certStoreProperties = jobConfig.CertificateStoreDetails.Properties;
+            var jobProps = jobConfig.JobProperties;
+            
             _logger.LogTrace("Parsing enrollment request from job properties.");
 
             string subject = GetRequiredValue(jobProps, "subjectText");
             string commandKeyType = GetRequiredValue(jobProps, "keyType");
-            string contractId = GetRequiredValue(jobProps, "ContractId");
+            string contractId = GetContractId(certStoreProperties, jobProps);
             string sans = GetRequiredValue(jobProps, "Sans");
 
             string keyType = MapCommandKeyTypeToAkamaiKeyType(commandKeyType);
@@ -276,6 +282,30 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             return (enrollment, contractId, keyType);
         }
 
+        private string? GetContractId(string certStoreProperties, Dictionary<string, object> jobConfigProperties)
+        {
+            _logger.LogTrace($"Resolving contract ID from store properties and job properties");
+
+            var isFound = jobConfigProperties.TryGetValue("ContractId", out object? contractIdOverride);
+
+            _logger.LogTrace($"ContractId found in job properties? {isFound}, ContractId value: {contractIdOverride}");
+
+            if (contractIdOverride != null)
+            {
+                var value = contractIdOverride?.ToString();
+                _logger.LogDebug($"Using ContractId found in job properties: {value}");
+                return value;
+            }
+            
+            _logger.LogTrace("Fetching ContractId from store properties");
+
+            var properties = JsonConvert.DeserializeObject<AkamaiCertStoreProperties>(certStoreProperties);
+            
+            _logger.LogDebug($"ContractId found in store properties: {properties.ContractId}");
+
+            return properties.ContractId;
+        }
+
         private string MapCommandKeyTypeToAkamaiKeyType(string commandKeyType)
         {
             _logger.MethodEntry();
@@ -315,9 +345,15 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
         /// Throws if the enrollment already exists (HTTP 409) or on any other API error.
         /// </summary>
         private (CreatedEnrollment createdEnrollment, string enrollmentId) CreateNewEnrollment(
-            IAkamaiClient client, Enrollment reenrollment, string contractId)
+            IAkamaiClient client, Enrollment reenrollment, string? contractId)
         {
             _logger.LogDebug("No existing enrollment found. Creating new enrollment for CN={cn}.", reenrollment.csr.cn);
+
+            if (string.IsNullOrWhiteSpace(contractId))
+            {
+                _logger.LogError("The resolved contract ID is null or empty. A contract ID is required to create a new Akamai enrollment.");
+                throw new InvalidOperationException($"A Contract ID is required when creating an Akamai enrollment. Please provide a Contract ID on the Reenrollment job or in the certificate store in Keyfactor Command.");
+            }
 
             CreatedEnrollment createdEnrollment;
             try

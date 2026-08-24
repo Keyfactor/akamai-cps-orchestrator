@@ -81,7 +81,7 @@ To use the Akamai Certificate Provisioning System (CPS) Universal Orchestrator e
 > To set the `default` values for the Entry Parameters, you will need to re-open the Certificate Store Type configuration after saving and running [this SQL script](akamai-cps-orchestrator/jobproperties.sql). This is due to a UI limitation.
 
 > [!IMPORTANT]
-> The `Contract ID` should be set to the default contract to be used for new Enrollments. 
+> The `Contract ID` should be set to the [default contract](#contract-id-defaults) to be used for new Enrollments. 
  
 > [!IMPORTANT]
 > All address information should be filled out with default expected values, as they are required fields for **each** enrollment created and should not be entered manually unless they need to be overwritten for a specific Enrollment in Akamai.
@@ -173,6 +173,7 @@ the Keyfactor Command Portal
    | access_token | Access Token | The Akamai access_token for authentication. | Secret |  | ✅ Checked |
    | client_token | Client Token | The Akamai client_token for authentication. | Secret |  | ✅ Checked |
    | client_secret | Client Secret | The Akamai client_secret for authentication. | Secret |  | ✅ Checked |
+   | ContractId | Contract ID | The default Akamai Contract ID for the certificate store. When performing re-enrollment, the Contract ID entry parameter will take precedence. | String |  | 🔲 Unchecked |
 
    The Custom Fields tab should look like this:
 
@@ -199,31 +200,11 @@ the Keyfactor Command Portal
    ![Akamai Custom Field - client_secret](docsource/images/Akamai-custom-field-client_secret-validation-options-dialog.svg)
 
 
+   ###### Contract ID
+   The default Akamai Contract ID for the certificate store. When performing re-enrollment, the Contract ID entry parameter will take precedence.
 
-   ###### Access Token
-   The Akamai access_token for authentication.
-
-   ![Akamai Custom Field - access_token](docsource/images/Akamai-custom-field-access_token-dialog.png)
-   ![Akamai Custom Field - access_token](docsource/images/Akamai-custom-field-access_token-validation-options-dialog.png)
-
-
-
-   ###### Client Token
-   The Akamai client_token for authentication.
-
-   ![Akamai Custom Field - client_token](docsource/images/Akamai-custom-field-client_token-dialog.png)
-   ![Akamai Custom Field - client_token](docsource/images/Akamai-custom-field-client_token-validation-options-dialog.png)
-
-
-
-   ###### Client Secret
-   The Akamai client_secret for authentication.
-
-   ![Akamai Custom Field - client_secret](docsource/images/Akamai-custom-field-client_secret-dialog.png)
-   ![Akamai Custom Field - client_secret](docsource/images/Akamai-custom-field-client_secret-validation-options-dialog.png)
-
-
-
+   ![Akamai Custom Field - ContractId](docsource/images/Akamai-custom-field-ContractId-dialog.svg)
+   ![Akamai Custom Field - ContractId](docsource/images/Akamai-custom-field-ContractId-validation-options-dialog.svg)
 
 
    ##### Entry Parameters Tab
@@ -231,7 +212,7 @@ the Keyfactor Command Portal
    | Name | Display Name | Description | Type | Default Value | Entry has a private key | Adding an entry | Removing an entry | Reenrolling an entry |
    | ---- | ------------ | ---- | ------------- | ----------------------- | ---------------- | ----------------- | ------------------- | ----------- |
    | EnrollmentId | Enrollment ID | Enrollment ID of a certificate enrollment in Akamai. This should only be supplied for ODKG when replacing an existing certificate. | String |  | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked |
-   | ContractId | Contract ID | The Contract ID of your account in Akamai. | String | SET-DEFAULT | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked | ✅ Checked |
+   | ContractId | Contract ID Override | The Contract ID of your account in Akamai. If a Contract ID is defined on the certificate store, the value of this parameter will take precedence. If a Contract ID is not defined on the certificate store, a value is required for this parameter. | String |  | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked |
    | Sans | SANs | SANs for the new certificate. If multiple are supplied, they should be split with an ampersand character '&' | String |  | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked | ✅ Checked |
    | admin-addressLineOne | Admin - Address Line 1 | Required field for Administrator contact. | String | SET-DEFAULT | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked | ✅ Checked |
    | admin-addressLineTwo | Admin - Address Line 2 | Optional field for Administrator contact. | String |  | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked |
@@ -277,8 +258,8 @@ the Keyfactor Command Portal
    ![Akamai Entry Parameter - EnrollmentId](docsource/images/Akamai-entry-parameters-store-type-dialog-EnrollmentId-validation-options.svg)
 
 
-   ##### Contract ID
-   The Contract ID of your account in Akamai.
+   ##### Contract ID Override
+   The Contract ID of your account in Akamai. If a Contract ID is defined on the certificate store, the value of this parameter will take precedence. If a Contract ID is not defined on the certificate store, a value is required for this parameter.
 
    ![Akamai Entry Parameter - ContractId](docsource/images/Akamai-entry-parameters-store-type-dialog-ContractId.svg)
    ![Akamai Entry Parameter - ContractId](docsource/images/Akamai-entry-parameters-store-type-dialog-ContractId-validation-options.svg)
@@ -522,260 +503,6 @@ the Keyfactor Command Portal
    ![Akamai Entry Parameter - deployment-network](docsource/images/Akamai-entry-parameters-store-type-dialog-deployment-network-validation-options.svg)
 
 
-
-   ##### Enrollment ID
-   Enrollment ID of a certificate enrollment in Akamai. This should only be supplied for ODKG when replacing an existing certificate.
-
-   ![Akamai Entry Parameter - EnrollmentId](docsource/images/Akamai-entry-parameters-store-type-dialog-EnrollmentId.png)
-   ![Akamai Entry Parameter - EnrollmentId](docsource/images/Akamai-entry-parameters-store-type-dialog-EnrollmentId-validation-options.png)
-
-
-   ##### Contract ID
-   The Contract ID of your account in Akamai.
-
-   ![Akamai Entry Parameter - ContractId](docsource/images/Akamai-entry-parameters-store-type-dialog-ContractId.png)
-   ![Akamai Entry Parameter - ContractId](docsource/images/Akamai-entry-parameters-store-type-dialog-ContractId-validation-options.png)
-
-
-   ##### SANs
-   SANs for the new certificate. If multiple are supplied, they should be split with an ampersand character '&'
-
-   ![Akamai Entry Parameter - Sans](docsource/images/Akamai-entry-parameters-store-type-dialog-Sans.png)
-   ![Akamai Entry Parameter - Sans](docsource/images/Akamai-entry-parameters-store-type-dialog-Sans-validation-options.png)
-
-
-   ##### Admin - Address Line 1
-   Required field for Administrator contact.
-
-   ![Akamai Entry Parameter - admin-addressLineOne](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-addressLineOne.png)
-   ![Akamai Entry Parameter - admin-addressLineOne](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-addressLineOne-validation-options.png)
-
-
-   ##### Admin - Address Line 2
-   Optional field for Administrator contact.
-
-   ![Akamai Entry Parameter - admin-addressLineTwo](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-addressLineTwo.png)
-   ![Akamai Entry Parameter - admin-addressLineTwo](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-addressLineTwo-validation-options.png)
-
-
-   ##### Admin - City
-   Required field for Administrator contact.
-
-   ![Akamai Entry Parameter - admin-city](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-city.png)
-   ![Akamai Entry Parameter - admin-city](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-city-validation-options.png)
-
-
-   ##### Admin - Country
-   Required field for Administrator contact.
-
-   ![Akamai Entry Parameter - admin-country](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-country.png)
-   ![Akamai Entry Parameter - admin-country](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-country-validation-options.png)
-
-
-   ##### Admin - Email
-   Required field for Administrator contact.
-
-   ![Akamai Entry Parameter - admin-email](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-email.png)
-   ![Akamai Entry Parameter - admin-email](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-email-validation-options.png)
-
-
-   ##### Admin - First Name
-   Required field for Administrator contact.
-
-   ![Akamai Entry Parameter - admin-firstName](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-firstName.png)
-   ![Akamai Entry Parameter - admin-firstName](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-firstName-validation-options.png)
-
-
-   ##### Admin - Last Name
-   Required field for Administrator contact.
-
-   ![Akamai Entry Parameter - admin-lastName](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-lastName.png)
-   ![Akamai Entry Parameter - admin-lastName](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-lastName-validation-options.png)
-
-
-   ##### Admin - Organization Name
-   Required field for Administrator contact.
-
-   ![Akamai Entry Parameter - admin-organizationName](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-organizationName.png)
-   ![Akamai Entry Parameter - admin-organizationName](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-organizationName-validation-options.png)
-
-
-   ##### Admin - Phone
-   Required field for Administrator contact.
-
-   ![Akamai Entry Parameter - admin-phone](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-phone.png)
-   ![Akamai Entry Parameter - admin-phone](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-phone-validation-options.png)
-
-
-   ##### Admin - Postal Code
-   Required field for Administrator contact.
-
-   ![Akamai Entry Parameter - admin-postalCode](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-postalCode.png)
-   ![Akamai Entry Parameter - admin-postalCode](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-postalCode-validation-options.png)
-
-
-   ##### Admin - Region
-   Required field for Administrator contact.
-
-   ![Akamai Entry Parameter - admin-region](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-region.png)
-   ![Akamai Entry Parameter - admin-region](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-region-validation-options.png)
-
-
-   ##### Admin - Title
-   Required field for Administrator contact.
-
-   ![Akamai Entry Parameter - admin-title](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-title.png)
-   ![Akamai Entry Parameter - admin-title](docsource/images/Akamai-entry-parameters-store-type-dialog-admin-title-validation-options.png)
-
-
-   ##### Org - Address Line 1
-   Required field for Organization contact.
-
-   ![Akamai Entry Parameter - org-addressLineOne](docsource/images/Akamai-entry-parameters-store-type-dialog-org-addressLineOne.png)
-   ![Akamai Entry Parameter - org-addressLineOne](docsource/images/Akamai-entry-parameters-store-type-dialog-org-addressLineOne-validation-options.png)
-
-
-   ##### Org - Address Line 2
-   Optional field for Organization contact.
-
-   ![Akamai Entry Parameter - org-addressLineTwo](docsource/images/Akamai-entry-parameters-store-type-dialog-org-addressLineTwo.png)
-   ![Akamai Entry Parameter - org-addressLineTwo](docsource/images/Akamai-entry-parameters-store-type-dialog-org-addressLineTwo-validation-options.png)
-
-
-   ##### Org - City
-   Required field for Organization contact.
-
-   ![Akamai Entry Parameter - org-city](docsource/images/Akamai-entry-parameters-store-type-dialog-org-city.png)
-   ![Akamai Entry Parameter - org-city](docsource/images/Akamai-entry-parameters-store-type-dialog-org-city-validation-options.png)
-
-
-   ##### Org - Country
-   Required field for Organization contact.
-
-   ![Akamai Entry Parameter - org-country](docsource/images/Akamai-entry-parameters-store-type-dialog-org-country.png)
-   ![Akamai Entry Parameter - org-country](docsource/images/Akamai-entry-parameters-store-type-dialog-org-country-validation-options.png)
-
-
-   ##### Org - Organization Name
-   Required field for Organization contact.
-
-   ![Akamai Entry Parameter - org-organizationName](docsource/images/Akamai-entry-parameters-store-type-dialog-org-organizationName.png)
-   ![Akamai Entry Parameter - org-organizationName](docsource/images/Akamai-entry-parameters-store-type-dialog-org-organizationName-validation-options.png)
-
-
-   ##### Org - Phone
-   Required field for Organization contact.
-
-   ![Akamai Entry Parameter - org-phone](docsource/images/Akamai-entry-parameters-store-type-dialog-org-phone.png)
-   ![Akamai Entry Parameter - org-phone](docsource/images/Akamai-entry-parameters-store-type-dialog-org-phone-validation-options.png)
-
-
-   ##### Org - Postal Code
-   Required field for Organization contact.
-
-   ![Akamai Entry Parameter - org-postalCode](docsource/images/Akamai-entry-parameters-store-type-dialog-org-postalCode.png)
-   ![Akamai Entry Parameter - org-postalCode](docsource/images/Akamai-entry-parameters-store-type-dialog-org-postalCode-validation-options.png)
-
-
-   ##### Org - Region
-   Required field for Organization contact.
-
-   ![Akamai Entry Parameter - org-region](docsource/images/Akamai-entry-parameters-store-type-dialog-org-region.png)
-   ![Akamai Entry Parameter - org-region](docsource/images/Akamai-entry-parameters-store-type-dialog-org-region-validation-options.png)
-
-
-   ##### Tech - Address Line 1
-   Required field for Akamai Tech contact.
-
-   ![Akamai Entry Parameter - tech-addressLineOne](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-addressLineOne.png)
-   ![Akamai Entry Parameter - tech-addressLineOne](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-addressLineOne-validation-options.png)
-
-
-   ##### Tech - Address Line 2
-   Optional field for Akamai Tech contact.
-
-   ![Akamai Entry Parameter - tech-addressLineTwo](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-addressLineTwo.png)
-   ![Akamai Entry Parameter - tech-addressLineTwo](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-addressLineTwo-validation-options.png)
-
-
-   ##### Tech - City
-   Required field for Akamai Tech contact.
-
-   ![Akamai Entry Parameter - tech-city](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-city.png)
-   ![Akamai Entry Parameter - tech-city](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-city-validation-options.png)
-
-
-   ##### Tech - Country
-   Required field for Akamai Tech contact.
-
-   ![Akamai Entry Parameter - tech-country](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-country.png)
-   ![Akamai Entry Parameter - tech-country](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-country-validation-options.png)
-
-
-   ##### Tech - Email
-   Required field for Akamai Tech contact. Must be an akamai.com email address.
-
-   ![Akamai Entry Parameter - tech-email](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-email.png)
-   ![Akamai Entry Parameter - tech-email](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-email-validation-options.png)
-
-
-   ##### Tech - First Name
-   Required field for Akamai Tech contact.
-
-   ![Akamai Entry Parameter - tech-firstName](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-firstName.png)
-   ![Akamai Entry Parameter - tech-firstName](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-firstName-validation-options.png)
-
-
-   ##### Tech - Last Name
-   Required field for Akamai Tech contact.
-
-   ![Akamai Entry Parameter - tech-lastName](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-lastName.png)
-   ![Akamai Entry Parameter - tech-lastName](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-lastName-validation-options.png)
-
-
-   ##### Tech - Organization Name
-   Required field for Akamai Tech contact.
-
-   ![Akamai Entry Parameter - tech-organizationName](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-organizationName.png)
-   ![Akamai Entry Parameter - tech-organizationName](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-organizationName-validation-options.png)
-
-
-   ##### Tech - Phone
-   Required field for Akamai Tech contact.
-
-   ![Akamai Entry Parameter - tech-phone](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-phone.png)
-   ![Akamai Entry Parameter - tech-phone](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-phone-validation-options.png)
-
-
-   ##### Tech - Postal Code
-   Required field for Akamai Tech contact.
-
-   ![Akamai Entry Parameter - tech-postalCode](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-postalCode.png)
-   ![Akamai Entry Parameter - tech-postalCode](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-postalCode-validation-options.png)
-
-
-   ##### Tech - Region
-   Required field for Akamai Tech contact.
-
-   ![Akamai Entry Parameter - tech-region](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-region.png)
-   ![Akamai Entry Parameter - tech-region](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-region-validation-options.png)
-
-
-   ##### Tech - Title
-   Required field for Akamai Tech contact.
-
-   ![Akamai Entry Parameter - tech-title](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-title.png)
-   ![Akamai Entry Parameter - tech-title](docsource/images/Akamai-entry-parameters-store-type-dialog-tech-title-validation-options.png)
-
-
-   ##### Deployment Network
-   Required field for Deployment Network.
-
-   ![Akamai Entry Parameter - deployment-network](docsource/images/Akamai-entry-parameters-store-type-dialog-deployment-network.png)
-   ![Akamai Entry Parameter - deployment-network](docsource/images/Akamai-entry-parameters-store-type-dialog-deployment-network-validation-options.png)
-
-
-
    </details>
 
 ## Installation
@@ -787,7 +514,7 @@ the Keyfactor Command Portal
    | Universal Orchestrator Version | Latest .NET version installed on the Universal Orchestrator server | `rollForward` condition in `Orchestrator.runtimeconfig.json` | `akamai-cps-orchestrator` .NET version to download |
    | --------- | ----------- | ----------- | ----------- |
    | Between `11.0.0` and `11.5.1` (inclusive) | `net8.0` | `LatestMajor` | `net8.0` |
-   | `11.6` _and_ newer | `net8.0` | | `net8.0` | 
+   | `11.6` _and_ newer | `net8.0` | | `net8.0` |
 
     Unzip the archive containing extension assemblies to a known location.
 
@@ -843,6 +570,7 @@ the Keyfactor Command Portal
    | access_token | The Akamai access_token for authentication. |
    | client_token | The Akamai client_token for authentication. |
    | client_secret | The Akamai client_secret for authentication. |
+   | ContractId | The default Akamai Contract ID for the certificate store. When performing re-enrollment, the Contract ID entry parameter will take precedence. |
 
 </details>
 
@@ -869,6 +597,7 @@ the Keyfactor Command Portal
    | Properties.access_token | The Akamai access_token for authentication. |
    | Properties.client_token | The Akamai client_token for authentication. |
    | Properties.client_secret | The Akamai client_secret for authentication. |
+   | Properties.ContractId | The default Akamai Contract ID for the certificate store. When performing re-enrollment, the Contract ID entry parameter will take precedence. |
 
 3. **Import the CSV file to create the certificate stores**
 
@@ -949,6 +678,16 @@ Currently, only the leaf certificate is returned from Keyfactor Command after en
 - Searching the trust store of the system running the orchestrator for matching intermediate and root certificates (both must be found in order to build the chain)
 
 If the trust chain cannot be built using either of these methods, the orchestrator will still complete the enrollment, but a warning message will be returned indicating that the trust chain could not be built. Please ensure that the intermediate and root certificates are part of your system's trust store or have publicly available AIA information to allow the orchestrator to build the trust chain successfully.
+
+#### Contract ID Defaults
+
+In order to create a new enrollment in Akamai CPS, Akamai requires that a [Contract ID](https://techdocs.akamai.com/cps/reference/get-started) be provided. You can find your Contract ID in the Akamai Control Center dashboard. As of v2.1.0 of the Akamai CPS Orchestrator integration, the Contract ID can be specified on the certificate store and on the re-enrollment (ODKG) entry parameter. The certificate store's **Contract ID** will be the default Contract ID for all re-enrollment jobs for the certificate store. The Contract ID re-enrollment entry parameter (**Contract ID Override**) will allow you to override the certificate store Contract ID value, in case you need to specify a different Contract ID for a specific re-enrollment job.
+
+If an Enrollment ID is not provided on the re-enrollment job, a Contract ID will be required to create a new Akamai enrollment. If a Contract ID is not provided on the certificate store or on the re-enrollment entry parameter, the job will fail with the following message: "A Contract ID is required when creating an Akamai enrollment. Please provide a Contract ID on the Reenrollment job or in the certificate store in Keyfactor Command.".
+
+> [!NOTE]
+>
+> If you created your certificate store prior to v2.1.0 of the integration, you can still run >= v2.1.0 as it is backwards compatible. Your entry parameter will show as **Contract ID** instead of **Contract ID Override**. We do recommend you try to update your certificate store type definition when possible, and we've provided a [SQL script](scripts/migrations/v2.1.0.sql) to help automate this migration.
 
 
 ## Use Cases

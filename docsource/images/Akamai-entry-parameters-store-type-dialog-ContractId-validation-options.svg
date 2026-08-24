@@ -53,10 +53,10 @@
   <circle cx="288" cy="303" r="7" fill="#ffffff" stroke="#999999" stroke-width="1" />
   <text x="300" y="307" class="label">Hidden</text>
   <text x="20" y="343" class="label">On Device Key Generation</text>
-  <circle cx="28" cy="364" r="7" fill="#ffffff" stroke="#999999" stroke-width="1" />
+  <circle cx="28" cy="364" r="7" fill="#e8eeff" stroke="#3355ee" stroke-width="1.5" />
+  <circle cx="28" cy="364" r="4" fill="#3355ee" />
   <text x="40" y="368" class="label">Optional</text>
-  <circle cx="158" cy="364" r="7" fill="#e8eeff" stroke="#3355ee" stroke-width="1.5" />
-  <circle cx="158" cy="364" r="4" fill="#3355ee" />
+  <circle cx="158" cy="364" r="7" fill="#ffffff" stroke="#999999" stroke-width="1" />
   <text x="170" y="368" class="label">Required</text>
   <circle cx="288" cy="364" r="7" fill="#ffffff" stroke="#999999" stroke-width="1" />
   <text x="300" y="368" class="label">Hidden</text>
