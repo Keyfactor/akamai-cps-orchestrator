@@ -92,7 +92,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             string enrollmentId;
             bool secureNetworkMismatch;
             CreatedEnrollment createdEnrollment;
-            bool hasExistingEnrollment = allJobProps.TryGetValue("EnrollmentId", out var existingEnrollmentIdObj)
+            bool hasExistingEnrollment = allJobProps.TryGetValue(Constants.EntryParameters.EnrollmentId, out var existingEnrollmentIdObj)
                                          && existingEnrollmentIdObj != null;
             try
             {
@@ -240,7 +240,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             string subject = GetRequiredValue(jobProps, "subjectText");
             string commandKeyType = GetRequiredValue(jobProps, "keyType");
             string contractId = GetContractId(certStoreProperties, jobProps);
-            string sans = GetRequiredValue(jobProps, "Sans");
+            string sans = GetRequiredValue(jobProps, Constants.EntryParameters.Sans);
 
             string keyType = MapCommandKeyTypeToAkamaiKeyType(commandKeyType);
 
@@ -270,11 +270,11 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             // Resolve the optional deployment network parameter.
             // Default to "standard-tls" for backward compatibility with job templates that
             // predate this field — omitting it avoids silently downgrading Enhanced TLS enrollments.
-            if (jobProps.TryGetValue("deployment-network", out var deploymentNetworkRaw)
+            if (jobProps.TryGetValue(Constants.EntryParameters.DeploymentNetwork, out var deploymentNetworkRaw)
                 && deploymentNetworkRaw != null
                 && !string.IsNullOrWhiteSpace(deploymentNetworkRaw.ToString()))
             {
-                enrollment.networkConfiguration.secureNetwork = ParseSecureNetwork(deploymentNetworkRaw.ToString());
+                enrollment.networkConfiguration.secureNetwork = MapSecureNetworkToAkamaiValue(deploymentNetworkRaw.ToString());
             }
             _logger.LogDebug("Deployment network resolved to: {secureNetwork}.",
                 enrollment.networkConfiguration.secureNetwork);
@@ -549,46 +549,46 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
 
         private ContactInfo BuildAdminContact(Dictionary<string, object> jobProps) => new ContactInfo
         {
-            addressLineOne   = GetRequiredValue(jobProps, "admin-addressLineOne"),
-            addressLineTwo   = jobProps["admin-addressLineTwo"]?.ToString(),
-            city             = GetRequiredValue(jobProps, "admin-city"),
-            country          = GetRequiredValue(jobProps, "admin-country"),
-            email            = GetRequiredValue(jobProps, "admin-email"),
-            firstName        = GetRequiredValue(jobProps, "admin-firstName"),
-            lastName         = GetRequiredValue(jobProps, "admin-lastName"),
-            organizationName = GetRequiredValue(jobProps, "admin-organizationName"),
-            phone            = GetRequiredValue(jobProps, "admin-phone"),
-            postalCode       = GetRequiredValue(jobProps, "admin-postalCode"),
-            region           = GetRequiredValue(jobProps, "admin-region"),
-            title            = GetRequiredValue(jobProps, "admin-title"),
+            addressLineOne   = GetRequiredValue(jobProps, Constants.EntryParameters.Admin.AddressLineOne),
+            addressLineTwo   = jobProps[Constants.EntryParameters.Admin.AddressLineTwo]?.ToString(),
+            city             = GetRequiredValue(jobProps, Constants.EntryParameters.Admin.City),
+            country          = GetRequiredValue(jobProps, Constants.EntryParameters.Admin.Country),
+            email            = GetRequiredValue(jobProps, Constants.EntryParameters.Admin.Email),
+            firstName        = GetRequiredValue(jobProps, Constants.EntryParameters.Admin.FirstName),
+            lastName         = GetRequiredValue(jobProps, Constants.EntryParameters.Admin.LastName),
+            organizationName = GetRequiredValue(jobProps, Constants.EntryParameters.Admin.OrganizationName),
+            phone            = GetRequiredValue(jobProps, Constants.EntryParameters.Admin.Phone),
+            postalCode       = GetRequiredValue(jobProps, Constants.EntryParameters.Admin.PostalCode),
+            region           = GetRequiredValue(jobProps, Constants.EntryParameters.Admin.Region),
+            title            = GetRequiredValue(jobProps, Constants.EntryParameters.Admin.Title),
         };
 
         private ContactInfo BuildOrgContact(Dictionary<string, object> jobProps) => new ContactInfo
         {
-            addressLineOne = GetRequiredValue(jobProps, "org-addressLineOne"),
-            addressLineTwo = jobProps["org-addressLineTwo"]?.ToString(),
-            city           = GetRequiredValue(jobProps, "org-city"),
-            country        = GetRequiredValue(jobProps, "org-country"),
-            name           = GetRequiredValue(jobProps, "org-organizationName"),
-            phone          = GetRequiredValue(jobProps, "org-phone"),
-            postalCode     = GetRequiredValue(jobProps, "org-postalCode"),
-            region         = GetRequiredValue(jobProps, "org-region"),
+            addressLineOne = GetRequiredValue(jobProps, Constants.EntryParameters.Org.AddressLineOne),
+            addressLineTwo = jobProps[Constants.EntryParameters.Org.AddressLineTwo]?.ToString(),
+            city           = GetRequiredValue(jobProps, Constants.EntryParameters.Org.City),
+            country        = GetRequiredValue(jobProps, Constants.EntryParameters.Org.Country),
+            name           = GetRequiredValue(jobProps, Constants.EntryParameters.Org.OrganizationName),
+            phone          = GetRequiredValue(jobProps, Constants.EntryParameters.Org.Phone),
+            postalCode     = GetRequiredValue(jobProps, Constants.EntryParameters.Org.PostalCode),
+            region         = GetRequiredValue(jobProps, Constants.EntryParameters.Org.Region),
         };
 
         private ContactInfo BuildTechContact(Dictionary<string, object> jobProps) => new ContactInfo
         {
-            addressLineOne   = GetRequiredValue(jobProps, "tech-addressLineOne"),
-            addressLineTwo   = jobProps["tech-addressLineTwo"]?.ToString(),
-            city             = GetRequiredValue(jobProps, "tech-city"),
-            country          = GetRequiredValue(jobProps, "tech-country"),
-            email            = GetRequiredValue(jobProps, "tech-email"),
-            firstName        = GetRequiredValue(jobProps, "tech-firstName"),
-            lastName         = GetRequiredValue(jobProps, "tech-lastName"),
-            organizationName = GetRequiredValue(jobProps, "tech-organizationName"),
-            phone            = GetRequiredValue(jobProps, "tech-phone"),
-            postalCode       = GetRequiredValue(jobProps, "tech-postalCode"),
-            region           = GetRequiredValue(jobProps, "tech-region"),
-            title            = GetRequiredValue(jobProps, "tech-title"),
+            addressLineOne   = GetRequiredValue(jobProps, Constants.EntryParameters.Tech.AddressLineOne),
+            addressLineTwo   = jobProps[Constants.EntryParameters.Tech.AddressLineTwo]?.ToString(),
+            city             = GetRequiredValue(jobProps, Constants.EntryParameters.Tech.City),
+            country          = GetRequiredValue(jobProps, Constants.EntryParameters.Tech.Country),
+            email            = GetRequiredValue(jobProps, Constants.EntryParameters.Tech.Email),
+            firstName        = GetRequiredValue(jobProps, Constants.EntryParameters.Tech.FirstName),
+            lastName         = GetRequiredValue(jobProps, Constants.EntryParameters.Tech.LastName),
+            organizationName = GetRequiredValue(jobProps, Constants.EntryParameters.Tech.OrganizationName),
+            phone            = GetRequiredValue(jobProps, Constants.EntryParameters.Tech.Phone),
+            postalCode       = GetRequiredValue(jobProps, Constants.EntryParameters.Tech.PostalCode),
+            region           = GetRequiredValue(jobProps, Constants.EntryParameters.Tech.Region),
+            title            = GetRequiredValue(jobProps, Constants.EntryParameters.Tech.Title),
         };
 
         // --- Utilities ---
@@ -615,10 +615,10 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
 
         private static string ExtractLastPathSegment(string url) => url.Split('/')[^1];
 
-        private static string ParseSecureNetwork(string displayValue) => displayValue switch
+        private static string MapSecureNetworkToAkamaiValue(string displayValue) => displayValue switch
         {
-            "Standard TLS" => "standard-tls",
-            "Enhanced TLS" => "enhanced-tls",
+            Constants.DeploymentNetwork.Command.StandardTLS => Constants.DeploymentNetwork.Akamai.StandardTLS,
+            Constants.DeploymentNetwork.Command.EnhancedTLS => Constants.DeploymentNetwork.Akamai.EnhancedTLS,
             _ => throw new ArgumentException($"Unrecognized deployment network '{displayValue}'. Expected 'Standard TLS' or 'Enhanced TLS'.")
         };
     }
