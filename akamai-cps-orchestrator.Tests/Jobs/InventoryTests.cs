@@ -196,6 +196,19 @@ public class InventoryTests : BaseJobTest<InventoryTests>
 
         AssertEntryParameter(Constants.EntryParameters.Sans, "a.example.com&b.example.com");
     }
+    
+    [Fact]
+    public void ProcessJob_WhenSansAreNull_SetsEntryParameterToEmptyString()
+    {
+        // Akamai CPS API docs say that it should return an empty array if no entries exist
+        // but the data type annotations indicate this field could be null. We should ensure
+        // the integration can handle both cases.
+        
+        var enrollment = new AkamaiEnrollmentBuilder().WithId("1").WithSans(null).Build();
+        SetupHappyPath(enrollment, SelfSignedCertInfo);
+
+        AssertEntryParameter(Constants.EntryParameters.Sans, string.Empty);
+    }
 
     [Fact]
     public void ProcessJob_WhenCertificatesPresent_SetsAdminContactParameters()

@@ -103,9 +103,9 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                         
                         var entryParameters = BuildEntryParameters(enrollment);
 
-                        var alias = x509Cert.Thumbprint;
+                        var certAlias = x509Cert.Thumbprint;
                         
-                        _logger.LogDebug($"Adding enrollment {enrollment.id} to inventory with alias {alias} and {entryParameters.Count} entry parameters.");
+                        _logger.LogDebug($"Adding enrollment {enrollment.id} to inventory with alias {certAlias} and {entryParameters.Count} entry parameters.");
                         
                         inventory.Add(
                             new CurrentInventoryItem()
@@ -114,7 +114,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
                                 ItemStatus = Orchestrators.Common.Enums.OrchestratorInventoryItemStatus.Unknown,
                                 PrivateKeyEntry = false,
                                 UseChainLevel = false,
-                                Alias = x509Cert.Thumbprint,
+                                Alias = certAlias,
                                 Parameters = entryParameters,
                             }
                         );
@@ -173,7 +173,7 @@ namespace Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Jobs
             {
                 { Constants.EntryParameters.EnrollmentId, enrollment.id },
                 { Constants.EntryParameters.DeploymentNetwork, MapSecureNetworkToCommandValue(enrollment) },
-                { Constants.EntryParameters.Sans, string.Join("&", enrollment.csr.sans) },
+                { Constants.EntryParameters.Sans, enrollment.csr.sans is null ? "" : string.Join("&", enrollment.csr.sans) },
             };
 
             AddAdminContactParameters(parameters, enrollment.adminContact);
