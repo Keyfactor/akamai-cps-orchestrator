@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using Keyfactor.Orchestrator.Extensions.AkamaiCpsOrchestrator.Models;
+
 namespace akamai_cps_orchestrator.Tests.Builders;
 
 public class ReenrollmentJobPropertiesBuilder
@@ -21,42 +23,42 @@ public class ReenrollmentJobPropertiesBuilder
         ["subjectText"] = "CN=test.example.com,O=TestOrg,OU=TestOU,L=TestCity,ST=TestState,C=US",
         ["keyType"] = "RSA",
         ["ContractId"] = "contract-123",
-        ["Sans"] = "test.example.com&www.test.example.com",
+        [Constants.EntryParameters.Sans] = "test.example.com&www.test.example.com",
         // admin contact
-        ["admin-addressLineOne"] = "123 Main St",
-        ["admin-addressLineTwo"] = null,
-        ["admin-city"] = "TestCity",
-        ["admin-country"] = "US",
-        ["admin-email"] = "admin@test.com",
-        ["admin-firstName"] = "Admin",
-        ["admin-lastName"] = "User",
-        ["admin-organizationName"] = "TestOrg",
-        ["admin-phone"] = "555-0100",
-        ["admin-postalCode"] = "12345",
-        ["admin-region"] = "TestState",
-        ["admin-title"] = "Admin",
+        [Constants.EntryParameters.Admin.AddressLineOne] = "123 Main St",
+        [Constants.EntryParameters.Admin.AddressLineTwo] = null,
+        [Constants.EntryParameters.Admin.City] = "TestCity",
+        [Constants.EntryParameters.Admin.Country] = "US",
+        [Constants.EntryParameters.Admin.Email] = "admin@test.com",
+        [Constants.EntryParameters.Admin.FirstName] = "Admin",
+        [Constants.EntryParameters.Admin.LastName] = "User",
+        [Constants.EntryParameters.Admin.OrganizationName] = "TestOrg",
+        [Constants.EntryParameters.Admin.Phone] = "555-0100",
+        [Constants.EntryParameters.Admin.PostalCode] = "12345",
+        [Constants.EntryParameters.Admin.Region] = "TestState",
+        [Constants.EntryParameters.Admin.Title] = "Admin",
         // org contact
-        ["org-addressLineOne"] = "123 Main St",
-        ["org-addressLineTwo"] = null,
-        ["org-city"] = "TestCity",
-        ["org-country"] = "US",
-        ["org-organizationName"] = "TestOrg",
-        ["org-phone"] = "555-0100",
-        ["org-postalCode"] = "12345",
-        ["org-region"] = "TestState",
+        [Constants.EntryParameters.Org.AddressLineOne] = "123 Main St",
+        [Constants.EntryParameters.Org.AddressLineTwo] = null,
+        [Constants.EntryParameters.Org.City] = "TestCity",
+        [Constants.EntryParameters.Org.Country] = "US",
+        [Constants.EntryParameters.Org.OrganizationName] = "TestOrg",
+        [Constants.EntryParameters.Org.Phone] = "555-0100",
+        [Constants.EntryParameters.Org.PostalCode] = "12345",
+        [Constants.EntryParameters.Org.Region] = "TestState",
         // tech contact
-        ["tech-addressLineOne"] = "123 Main St",
-        ["tech-addressLineTwo"] = null,
-        ["tech-city"] = "TestCity",
-        ["tech-country"] = "US",
-        ["tech-email"] = "tech@test.com",
-        ["tech-firstName"] = "Tech",
-        ["tech-lastName"] = "User",
-        ["tech-organizationName"] = "TestOrg",
-        ["tech-phone"] = "555-0100",
-        ["tech-postalCode"] = "12345",
-        ["tech-region"] = "TestState",
-        ["tech-title"] = "Tech",
+        [Constants.EntryParameters.Tech.AddressLineOne] = "123 Main St",
+        [Constants.EntryParameters.Tech.AddressLineTwo] = null,
+        [Constants.EntryParameters.Tech.City] = "TestCity",
+        [Constants.EntryParameters.Tech.Country] = "US",
+        [Constants.EntryParameters.Tech.Email] = "tech@test.com",
+        [Constants.EntryParameters.Tech.FirstName] = "Tech",
+        [Constants.EntryParameters.Tech.LastName] = "User",
+        [Constants.EntryParameters.Tech.OrganizationName] = "TestOrg",
+        [Constants.EntryParameters.Tech.Phone] = "555-0100",
+        [Constants.EntryParameters.Tech.PostalCode] = "12345",
+        [Constants.EntryParameters.Tech.Region] = "TestState",
+        [Constants.EntryParameters.Tech.Title] = "Tech",
     };
 
     public ReenrollmentJobPropertiesBuilder WithKeyType(string? keyType)
@@ -69,13 +71,13 @@ public class ReenrollmentJobPropertiesBuilder
     // even with null, adds the key so callers can distinguish "absent" from "present but null".
     public ReenrollmentJobPropertiesBuilder WithDeploymentNetwork(string? deploymentNetwork)
     {
-        _props["deployment-network"] = deploymentNetwork;
+        _props[Constants.EntryParameters.DeploymentNetwork] = deploymentNetwork;
         return this;
     }
 
     public ReenrollmentJobPropertiesBuilder WithEnrollmentId(string? enrollmentId)
     {
-        _props["EnrollmentId"] = enrollmentId;
+        _props[Constants.EntryParameters.EnrollmentId] = enrollmentId;
         return this;
     }
 

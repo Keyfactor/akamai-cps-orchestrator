@@ -1,3 +1,7 @@
+# 2.1.1
+## Fixes
+- Addresses an issue where entry parameters are not mapped on inventoried certificates.
+
 # 2.1.0
 ## Features
 - Add a default Contract ID to the certificate store type, allowing for a per-store default with an override provided via the entry parameter. The existing Contract ID entry parameter has been renamed to Contract ID Override and has been made optional. This update is backwards compatible with older versions of the certificate store type.
