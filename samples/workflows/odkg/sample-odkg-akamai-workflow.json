@@ -1,0 +1,228 @@
+{
+  "Id": "a507c70d-361c-4f84-aac8-0e9a65893cc9",
+  "DisplayName": "Akamai ODKG",
+  "Description": "Automatic re-enrollment for certificates in Akamai certificate stores",
+  "WorkflowType": "CertificateEnteredCollection",
+  "Keys": [],
+  "Enabled": true,
+  "IsPublished": true,
+  "Steps": [
+    {
+      "Id": "5ee8677f-7f6c-442f-ad47-0babd9aebc08",
+      "DisplayName": "Get Store Inventory",
+      "UniqueName": "OAuthRESTRequest4",
+      "ExtensionName": "OAuthRESTRequest",
+      "Enabled": true,
+      "ConfigurationParameters": {
+        "Headers": {},
+        "DataBucketProperty": "getStoreInventoryResponse",
+        "Verb": "GET",
+        "client_id": "<!OAuth Client ID>",
+        "client_secret": null,
+        "TokenEndpoint": "<!OAuth Token URL>",
+        "scope": "",
+        "audience": "",
+        "URL": "$(API_URL)/$(API_SUBPATH)/certificatestores/$(CertStoreId)/inventory",
+        "ContentType": "application/json",
+        "RequestContent": ""
+      },
+      "Signals": [],
+      "Conditions": [],
+      "Outputs": {
+        "continue": "PowerShell2"
+      }
+    },
+    {
+      "Id": "af40b34a-026c-48fa-ad30-13c75947133c",
+      "DisplayName": "Get SANs and Location ID",
+      "UniqueName": "getSANsAndLocationId",
+      "ExtensionName": "OAuthRESTRequest",
+      "Enabled": true,
+      "ConfigurationParameters": {
+        "Headers": {},
+        "DataBucketProperty": "getCertificateResponse",
+        "Verb": "GET",
+        "client_id": "<!OAuth Client ID>",
+        "client_secret": null,
+        "TokenEndpoint": "<!OAuth Token URL>",
+        "scope": "",
+        "audience": "",
+        "URL": "$(API_URL)/$(API_SUBPATH)/certificates/$(certid)?includeLocations=true",
+        "ContentType": "application/json",
+        "RequestContent": ""
+      },
+      "Signals": [],
+      "Conditions": [],
+      "Outputs": {
+        "continue": "PowerShell1"
+      }
+    },
+    {
+      "Id": "e8af942a-b7f2-4fdb-ae08-2325317af7a9",
+      "DisplayName": "Get Store Config",
+      "UniqueName": "OAuthRESTRequest3",
+      "ExtensionName": "OAuthRESTRequest",
+      "Enabled": true,
+      "ConfigurationParameters": {
+        "Headers": {},
+        "DataBucketProperty": "getStoreResponse",
+        "Verb": "GET",
+        "client_id": "<!OAuth Client ID>",
+        "client_secret": null,
+        "TokenEndpoint": "<!OAuth Token URL>",
+        "scope": "",
+        "audience": "",
+        "URL": "$(API_URL)/$(API_SUBPATH)/certificatestores/$(CertStoreId)",
+        "ContentType": "application/json",
+        "RequestContent": ""
+      },
+      "Signals": [],
+      "Conditions": [],
+      "Outputs": {
+        "continue": "OAuthRESTRequest4"
+      }
+    },
+    {
+      "Id": "5a1122c2-1436-4472-81c2-29948cd9ac1a",
+      "DisplayName": "Read Values for ODKG Job",
+      "UniqueName": "PowerShell1",
+      "ExtensionName": "PowerShell",
+      "Enabled": true,
+      "ConfigurationParameters": {
+        "ScriptParameters": {
+          "certificateResponse": "$(getCertificateResponse)",
+          "storeTypeResponse": "$(getStoreTypeResponse)"
+        },
+        "ScriptContent": "param(\n$certificateResponse,\n$storeTypeResponse\n)\n\n$certificateResponse = $certificateResponse | ConvertFrom-Json\n$storeTypeResponse = $storeTypeResponse | ConvertFrom-Json\n\n# COMPATIBILITY NOTE: this should be uncommented for KF Command Versions 12.2 and below, which require accessing the Result object\n# need to access the Result element of the response objects in KF 11 -> 12.2\n# $certificateResponse = $certificateResponse.Result\n# $storeTypeResponse = $storeTypeResponse.Result\n\n# storeTypeResponse returns array of results, need to select specific result\n$storeTypeResponse = $storeTypeResponse[0]\n\n$result = @{}\n\n$foundSans = \"\"\n\n# read sans from cert info\n$sans = $certificateResponse.SubjectAltNameElements\nforeach($san in $sans)\n{\n    if ($san.Type -eq 2) #include only dns sans (type 2)\n    {\n        if ($foundSans) # if Sans is non-empty\n        {\n            $foundSans = $foundSans + \"&\" # add ampersand delimiter for additional DNS SANs\n        }\n        $foundSans = $foundSans + $san.Value\n    }\n}\n\n$result.Add(\"foundSans\", $foundSans)\n\n# get Location / Store Id to lookup Orchestrator ID\n$locations = $certificateResponse.Locations\nforeach($location in $locations)\n{\n    if ($location.StoreType -eq $storeTypeResponse.StoreType)\n    {\n        $result.Add(\"CertStoreId\", $location.CertStoreId)\n    }\n}\n\nreturn $result"
+      },
+      "Signals": [],
+      "Conditions": [],
+      "Outputs": {
+        "continue": "OAuthRESTRequest3"
+      }
+    },
+    {
+      "Id": "c7ae61c0-c955-4d81-b492-3cba9c66db7f",
+      "DisplayName": "Start-NOOP",
+      "UniqueName": "StartNOOP",
+      "ExtensionName": "NOOPStep",
+      "Enabled": true,
+      "ConfigurationParameters": {},
+      "Signals": [],
+      "Conditions": [],
+      "Outputs": {
+        "continue": "PowerShell3"
+      }
+    },
+    {
+      "Id": "04099863-9732-4eb0-9621-4d9aeb15b262",
+      "DisplayName": "Get ODKG Store Type",
+      "UniqueName": "OAuthRESTRequest1",
+      "ExtensionName": "OAuthRESTRequest",
+      "Enabled": true,
+      "ConfigurationParameters": {
+        "Headers": {},
+        "DataBucketProperty": "getStoreTypeResponse",
+        "Verb": "GET",
+        "client_id": "<!OAuth Client ID>",
+        "client_secret": null,
+        "TokenEndpoint": "<!OAuth Token URL>",
+        "scope": "",
+        "audience": "",
+        "URL": "$(API_URL)/$(API_SUBPATH)/certificatestoretypes/name/$(STORE_TYPE_NAME)",
+        "ContentType": "application/json",
+        "RequestContent": ""
+      },
+      "Signals": [],
+      "Conditions": [],
+      "Outputs": {
+        "continue": "getSANsAndLocationId"
+      }
+    },
+    {
+      "Id": "009ea33f-db20-4cb2-835e-7e568f7d25eb",
+      "DisplayName": "Set Workflow Variables",
+      "UniqueName": "PowerShell3",
+      "ExtensionName": "PowerShell",
+      "Enabled": true,
+      "ConfigurationParameters": {
+        "ScriptParameters": {},
+        "ScriptContent": "$result = @{}\n# Workflow Configuration settings\n$result.Add(\"STORE_TYPE_NAME\", \"Akamai\")\n$result.Add(\"API_URL\", \"<!API URL>\")\n$result.Add(\"API_SUBPATH\", \"<!API Subpath>\")\n\n# Set defaults for CA and Template in case the certificate being renewed uses a CA or Template not in KF Command\n$result.Add(\"DEFAULT_CA\", \"<!CA Host Name>\\<!CA Logical Name>\")\n$result.Add(\"DEFAULT_TEMPLATE\", \"<!Certificate Template>\")\n\n\nreturn $result"
+      },
+      "Signals": [],
+      "Conditions": [],
+      "Outputs": {
+        "continue": "OAuthRESTRequest1"
+      }
+    },
+    {
+      "Id": "26505ba0-b4a4-4e53-84c6-be7db01d9ea0",
+      "DisplayName": "Submit ODKG job scheduling request",
+      "UniqueName": "OAuthRESTRequest5",
+      "ExtensionName": "OAuthRESTRequest",
+      "Enabled": true,
+      "ConfigurationParameters": {
+        "Headers": {
+          "X-Keyfactor-Requested-With": [
+            "APIClient"
+          ]
+        },
+        "DataBucketProperty": "",
+        "Verb": "POST",
+        "client_id": "<!OAuth Client ID>",
+        "client_secret": null,
+        "TokenEndpoint": "<!OAuth Token URL>",
+        "scope": "",
+        "audience": "",
+        "URL": "$(API_URL)/$(API_SUBPATH)/certificatestores/reenrollment",
+        "ContentType": "application/json",
+        "RequestContent": "{\n\"KeystoreId\": \"$(KeystoreId)\",\n\"SubjectName\": \"$(SubjectName)\",\n\"AgentGuid\": \"$(AgentGuid)\",\n\"Alias\": \"$(Alias)\",\n\"JobProperties\": $(JobProperties),\n\"CertificateAuthority\": \"$(CertificateAuthority)\",\n\"CertificateTemplate\": \"$(CertificateTemplate)\",\n\"Overwrite\": true\n}"
+      },
+      "Signals": [],
+      "Conditions": [],
+      "Outputs": {
+        "continue": "EndNOOP"
+      }
+    },
+    {
+      "Id": "9b91b423-3b9f-4dcd-ab15-c7ac1bae424a",
+      "DisplayName": "End-NOOP",
+      "UniqueName": "EndNOOP",
+      "ExtensionName": "NOOPStep",
+      "Enabled": true,
+      "ConfigurationParameters": {},
+      "Signals": [],
+      "Conditions": [],
+      "Outputs": {}
+    },
+    {
+      "Id": "74cd8563-9efc-463f-8c34-ef3fc0cc2a01",
+      "DisplayName": "Build ODKG request body",
+      "UniqueName": "PowerShell2",
+      "ExtensionName": "PowerShell",
+      "Enabled": true,
+      "ConfigurationParameters": {
+        "ScriptParameters": {
+          "certStoreId": "$(CertStoreId)",
+          "getStoreResponse": "$(getStoreResponse)",
+          "sans": "$(foundSans)",
+          "getStoreInventoryResponse": "$(getStoreInventoryResponse)",
+          "subject": "$(dn)",
+          "template": "$(Template)",
+          "ca": "$(CA)",
+          "thumbprint": "$(thumbprint)",
+          "DEFAULT_TEMPLATE": "$(DEFAULT_TEMPLATE)",
+          "DEFAULT_CA": "$(DEFAULT_CA)"
+        },
+        "ScriptContent": "param(\n$certStoreId,\n$subject,\n$thumbprint,\n$ca,\n$template,\n$getStoreResponse,\n$sans,\n$getStoreInventoryResponse,\n$DEFAULT_CA,\n$DEFAULT_TEMPLATE\n)\n\n$storeConfig = $getStoreResponse | ConvertFrom-Json\n$inventoryList = $getStoreInventoryResponse | ConvertFrom-Json\n\n# COMPATIBILITY NOTE: this should be uncommented for KF Command Versions 12.2 and below, which require accessing the Result object\n# need to access the Result element of the response objects in KF 11 -> 12.2\n# $storeConfig = $storeConfig.Result\n# $inventoryList = $inventoryList.Result\n\n# check if CA and Template were provided\n# IF NOT: use Workflow Defaults\nif($ca -notcontains '\\') # $ca was not provided, did not match expected format\n{\n    $ca = $DEFAULT_CA\n    $template = $DEFAULT_TEMPLATE\n}\n\n# get entry parameters for the previous certificate from inventory from Akamai store\n$entryParameters = @{}\nforeach($inventoryItem in $inventoryList)\n{\n    if ($inventoryItem.Name -eq $thumbprint)\n    {\n        $entryParameters = $inventoryItem.Parameters\n    }\n}\n\n# merge filtered sans with entry parameters\n$entryParameters.Sans = $sans\n\n$entryParametersJson = $entryParameters | ConvertTo-Json\n\n# remove new lines from JSON for submitting body\n$entryParametersJson = $entryParametersJson -replace \"`n\",\"\" -replace \"`r\",\"\"\n\n# escape ca \n$escapedCA = $ca -replace '\\\\', '\\\\'\n\n$result = @{}\n$result.Add(\"KeystoreId\", $certStoreId)\n$result.Add(\"SubjectName\", $subject)\n$result.Add(\"AgentGuid\", $storeConfig.AgentId)\n$result.Add(\"Alias\", $thumbprint)\n$result.Add(\"JobProperties\", $entryParametersJson)\n$result.Add(\"CertificateAuthority\", $escapedCA)\n$result.Add(\"CertificateTemplate\", $template)\n\nreturn $result"
+      },
+      "Signals": [],
+      "Conditions": [],
+      "Outputs": {
+        "continue": "OAuthRESTRequest5"
+      }
+    }
+  ],
+  "DraftVersion": 3,
+  "PublishedVersion": 3
+}
