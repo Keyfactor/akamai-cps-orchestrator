@@ -1,5 +1,8 @@
 # Sample Workflow: Automated Akamai ODKG (Re-enrollment)
 
+> [!IMPORTANT]
+> This is a sample workflow intended to help automate the re-enrollment of Akamai certificates using On-Device Key Generation (ODKG) in Keyfactor Command using the Keyfactor Command API. While it has been tested on Command 25.1 and 26.2, it is not guaranteed to work on future versions of Command. A future version of Keyfactor Command will bring native ODKG automation. We recommend testing in a non-production environment first before deploying it to production. If you need assistance with Keyfactor Command workflows, please reach out to Keyfactor support.
+
 [`sample-odkg-akamai-workflow.json`](sample-odkg-akamai-workflow.json) is a sample Keyfactor Command workflow that
 automatically schedules an On-Device Key Generation (ODKG) / Re-enrollment job for certificates that live in an Akamai
 certificate store.
@@ -37,6 +40,9 @@ Akamai certificates expiring within the next seven days:
 ```
 CertStoreType -eq "Akamai" AND ExpirationDate -ge "%TODAY%" AND ExpirationDate -le "%TODAY+7%" AND CertState -eq "1"
 ```
+
+> [!NOTE]
+> You can find all supported QueryString fields in the [Keyfactor Command API documentation](https://software.keyfactor.com/Core-OnPrem/Current/Content/WebAPI/KeyfactorAPI/CertificatesGet.htm)
 
 Adjust the expiration window to match the lead time your team wants. Widening it means renewals start earlier; the
 seven-day window assumes the collection is evaluated at least daily.
