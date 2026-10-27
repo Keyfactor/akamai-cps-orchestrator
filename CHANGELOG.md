@@ -1,3 +1,7 @@
+# 2.1.2
+## Features
+- Added ODKG workflow example to repository
+
 # 2.1.1
 ## Fixes
 - Addresses an issue where entry parameters are not mapped on inventoried certificates.
